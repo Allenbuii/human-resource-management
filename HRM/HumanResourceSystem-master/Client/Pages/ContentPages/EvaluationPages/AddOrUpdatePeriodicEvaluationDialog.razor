@@ -1,0 +1,150 @@
+﻿<SfDialog Width="600px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> @Title Evaluations </Header>
+        <Content>
+            <EditForm Model="PeriodicEvaluation" Enhance>
+                <div class="card border-success">
+                    <div class="card-body">
+
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="form-group">
+                                    <label class="form-label">Id</label>
+                                    <input @bind="PeriodicEvaluation.Id" class="form-control" disabled />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-lg-6">
+                                <div class="form-group">
+                                    <label class="form-label">Name</label>
+                                    <input @bind="EmployeeName" class="form-control" disabled />
+                                </div>
+                                <div class="form-group mt-1">
+                                    <label class="form-label">Assessor</label>
+                                    <input @bind="AssessorName" class="form-control" disabled />
+                                </div> 
+                                <div class="form-group mt-1">
+                                    <label class="form-label">Evaluation Date</label>
+                                    <InputDate @bind-Value="PeriodicEvaluation.EvaluationDate" class="form-control" disabled/>
+                                </div>
+                                <div class="form-group mt-1">
+                                    <label class="form-label">Comments</label>
+                                    <InputTextArea @bind-Value="PeriodicEvaluation.Comments" class="form-control" rows="4" disabled="@isDisabled"/>
+                                </div>                              
+                            </div>
+
+                            <div class="col-lg-6">   
+                                <div class="form-group">
+                                    <label class="form-label">Technical</label>
+                                    <InputNumber @bind-Value="PeriodicEvaluation.TechnicalSkillsScore" class="form-control" min="0" max="10" disabled="@isDisabled"/>
+                                </div>
+                                <div class="form-group mt-1">
+                                    <label class="form-label">Communication</label>
+                                    <InputNumber @bind-Value="PeriodicEvaluation.CommunicationSkillsScore" class="form-control" min="0" max="10" disabled="@isDisabled"/>
+                                </div>
+                                <div class="form-group mt-1">
+                                    <label class="form-label">Teamwork</label>
+                                    <InputNumber @bind-Value="PeriodicEvaluation.TeamworkSkillsScore" class="form-control" min="0" max="10" disabled="@isDisabled"/>
+                                </div>
+                                <div class="form-group mt-1">
+                                    <label class="form-label">Problem Solving</label>
+                                    <InputNumber @bind-Value="PeriodicEvaluation.ProblemSolvingSkillsScore" class="form-control" min="0" max="10" disabled="@isDisabled"/>
+                                </div
+                                <div class="form-group mt-2">
+                                    <label class="form-label">Work Ethic</label>
+                                    <InputNumber @bind-Value="PeriodicEvaluation.WorkEthicScore" class="form-control" min="0" max="10" disabled="@isDisabled"/>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        @if (Title == "View")
+        {
+            <DialogButton Content="CLOSE" IsPrimary="true" OnClick="CloseDialog" />            
+        }
+        else
+        {
+            <DialogButton Content="Save" IsPrimary="true" OnClick="Save" />
+        }
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    [Parameter] public PeriodicEvaluation PeriodicEvaluation { get; set; } = new();
+    [Parameter] public EventCallback<PeriodicEvaluation> HandleSavePeriodicEvaluationEvent { get; set; }
+
+    public string Title = "Add";
+    private bool IsVisible { get; set; } = false;
+    private bool isDisabled => Title == "View";
+
+    private string? EmployeeName { get; set; }
+
+    private string? AssessorName { get; set; }
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(PeriodicEvaluation.Comments) || 
+            PeriodicEvaluation?.TechnicalSkillsScore == null || 
+            PeriodicEvaluation?.CommunicationSkillsScore == null || 
+            PeriodicEvaluation?.TeamworkSkillsScore == null || 
+            PeriodicEvaluation?.ProblemSolvingSkillsScore == null)
+        {
+            await dialogService.AlertAsync("You need to provide comment.", "Alert!");
+        }
+        else if (new[] 
+        {
+            PeriodicEvaluation.TechnicalSkillsScore,
+            PeriodicEvaluation.CommunicationSkillsScore,
+            PeriodicEvaluation.TeamworkSkillsScore,
+            PeriodicEvaluation.ProblemSolvingSkillsScore
+        }.Any(score => score < 1 || score > 10))
+        {
+            await dialogService.AlertAsync("Score must be from 1 to 10", "Alert!");
+        }
+        else
+        {
+            await HandleSavePeriodicEvaluationEvent.InvokeAsync(PeriodicEvaluation);
+        }
+    }
+
+    private async Task GetAssessor()
+    {
+        var Assessor = await employeeService.GetById(PeriodicEvaluation.AssessorId, Constants.EmployeeBaseUrl);
+        AssessorName = Assessor.Name ?? "No Name";
+    }
+
+    public async void OpenDialog()
+    {
+        EmployeeName = PeriodicEvaluation.Employee?.Name ?? "No Name";
+
+        try {
+            await GetAssessor();
+        } catch {
+            Console.WriteLine("Error");
+        }
+        if (PeriodicEvaluation?.EvaluationDate == DateTime.MinValue)
+            PeriodicEvaluation.EvaluationDate = DateTime.Now;
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+}

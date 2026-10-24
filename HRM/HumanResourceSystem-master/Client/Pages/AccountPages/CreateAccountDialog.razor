@@ -1,0 +1,87 @@
+﻿<SfDialog Width="320px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> Create Account </Header>
+        <Content>
+            <EditForm Model="User" Enhance OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Employee Id</label>
+                            <InputNumber @bind-Value="User.EmployeeId" class="form-control" disabled></InputNumber>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Employee Name</label>
+                            <InputText @bind-Value="User.Fullname" class="form-control" disabled></InputText>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Email</label>
+                            <InputText @bind-Value="User.Email" class="form-control" disabled></InputText>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Password</label>
+                            <input type="password" @bind="User.Password" class="form-control"></input>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" @bind="User.ConfirmPassword" class="form-control"></input>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Generate Password" Type="ButtonType.Submit" IsPrimary="true" OnClick="GeneratePassword" />
+        <DialogButton Content="SAVE" Type="ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    [Parameter] public Employee Employee { get; set; } = new();
+    [Parameter] public EventCallback<Register> HandleSaveOperationEvent { get; set; }
+
+    Register User = new();
+
+    private bool IsVisible { get; set; } = false;
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(User.Password) || string.IsNullOrEmpty(User.ConfirmPassword))
+        {
+            await dialogService.AlertAsync("You need to provide your password and confirm password.", "Alert!");
+            return;
+        }
+
+        if (User.Password != User.ConfirmPassword)
+        {
+            await dialogService.AlertAsync("The password and the confirmation password do not match.", "Alert!");
+            return;
+        }
+
+        await HandleSaveOperationEvent.InvokeAsync(User);
+
+    }
+
+    public void GeneratePassword()
+    {
+        User.Password = $"{Employee.Name!.Split(' ').Last()}{Employee.Id:D5}";
+        User.ConfirmPassword = User.Password;
+        StateHasChanged();
+    }
+
+    public void OpenDialog()
+    {
+        User.EmployeeId = Employee.Id;
+        User.Fullname = Employee.Name;
+        User.Email = Employee.Email;
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+}

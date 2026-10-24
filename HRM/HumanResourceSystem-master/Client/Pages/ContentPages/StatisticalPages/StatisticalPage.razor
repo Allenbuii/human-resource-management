@@ -1,0 +1,143 @@
+﻿@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Charts
+@implements IDisposable
+
+@if (allState.ShowStatistical)
+{
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="float-start">Statistical</h4>
+                        <div class="dropdown float-end">
+                            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-filter-circle"> </i> Statistical Type
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <button class="dropdown-item" @onclick="PeriodicEvaluationClicked">
+                                        Periodic Evaluation
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item" @onclick="EmployeeDistributionClicked">
+                                        Employee Distribution
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item" @onclick="BonusClicked">
+                                        Employee Bonus
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item" @onclick="RecruitmentClicked">
+                                        Recruitment Statistics
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item" @onclick="OvertimeClicked">
+                                        Overtime Distribution
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item" @onclick="VacationClicked">
+                                        Vacation Distribution
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item" @onclick="SanctionClicked">
+                                        Sanction Distribution
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <PeriodicEvaluationStatistical @ref="periodicEvaluationStatistical" />
+                    <EmployeeDistributionStatistical @ref="employeeDistributionStatistical" />
+                    <BonusStatistical @ref="bonusStatistical" />
+                    <RecruitmentStatistical @ref="recruitmentStatistical" />
+                    <OvertimeStatistical @ref="overtimeStatistical" />
+                    <VacationStatistical @ref="vacationStatistical" />
+                    <SanctionStatistical @ref="sanctionStatistical" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    PeriodicEvaluationStatistical? periodicEvaluationStatistical;
+    EmployeeDistributionStatistical? employeeDistributionStatistical;
+    BonusStatistical? bonusStatistical;
+    RecruitmentStatistical? recruitmentStatistical;
+    OvertimeStatistical? overtimeStatistical;
+    VacationStatistical? vacationStatistical;
+    SanctionStatistical? sanctionStatistical;
+
+    protected async override Task OnInitializedAsync()
+    {
+        allState.Action += StateHasChanged;
+    }
+
+    private void PeriodicEvaluationClicked()
+    {
+        Reset();
+        periodicEvaluationStatistical?.OpenPeriodicEvaluationStatistical();
+    }
+
+    private void EmployeeDistributionClicked()
+    {
+        Reset();
+        employeeDistributionStatistical?.OpenEmployeeDistributionStatistical();
+    }
+
+    private void BonusClicked()
+    {
+        Reset();
+        bonusStatistical?.OpenBonusesStatistical();
+    }
+
+    private void RecruitmentClicked()
+    {
+        Reset();
+        recruitmentStatistical?.OpenRecruitmentsStatistical();
+    }
+
+    private void OvertimeClicked()
+    {
+        Reset();
+        overtimeStatistical?.OpenOvertimesStatistical();
+    }
+
+    private void VacationClicked()
+    {
+        Reset();
+        vacationStatistical?.OpenVacationsStatistical();
+    }
+
+    private void SanctionClicked()
+    {
+        Reset();
+        sanctionStatistical?.OpenSanctionsStatistical();
+    }
+
+    private void Reset()
+    {
+        periodicEvaluationStatistical?.ClosePeriodicEvaluationStatistical();
+        employeeDistributionStatistical?.CloseEmployeeDistributionStatistical();
+        bonusStatistical?.CloseBonusesStatistical();
+        recruitmentStatistical?.CloseRecruitmentsStatistical();
+        overtimeStatistical?.CloseOvertimesStatistical();
+        vacationStatistical?.CloseVacationsStatistical();
+        sanctionStatistical?.CloseSanctionsStatistical();
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

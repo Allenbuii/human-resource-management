@@ -1,0 +1,68 @@
+﻿@using Syncfusion.Blazor.Charts
+
+@if (IsVisible)
+{
+    <SfChart Title="Employee Distribution by Department">
+        <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+        <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category" Interval="1" LabelIntersectAction="@Label" LabelRotation="@Rotation">
+            <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+            <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+        </ChartPrimaryXAxis>
+        <ChartPrimaryYAxis Title="Employee Count" Interval="1" Minimum="0">
+            <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+            <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+        </ChartPrimaryYAxis>
+        <ChartSeriesCollection>
+            <ChartSeries TooltipMappingName="Department" DataSource="@EmployeeDistributionDatas" XName="Department" YName="EmployeeCount" Name="Employees" ColumnSpacing="0.1" Type="ChartSeriesType.Column">
+                <ChartMarker>
+                    <ChartDataLabel Visible="true">
+                        <ChartDataLabelFont FontWeight="600" Color="#ffffff"></ChartDataLabelFont>
+                    </ChartDataLabel>
+                </ChartMarker>
+            </ChartSeries>
+        </ChartSeriesCollection>
+        <ChartLegendSettings Visible="true" EnableHighlight="true"></ChartLegendSettings>
+        <ChartTooltipSettings Enable="true" Fill="#000000" Opacity="1"></ChartTooltipSettings>
+    </SfChart>
+}
+
+@code {
+    public double Rotation { get; set; } = 0;
+    public List<Employee> Employees { get; set; } = [];
+    public LabelIntersectAction Label { get; set; } = LabelIntersectAction.Trim;
+    public List<EmployeeDistributionData>? EmployeeDistributionDatas { get; set; }
+
+    private bool IsVisible { get; set; } = false;
+
+    public async void OpenEmployeeDistributionStatistical()
+    {
+        IsVisible = true;
+        await LoadEmployees();
+        GetEmployeeDistributionData();
+        StateHasChanged();
+    }
+
+    public void CloseEmployeeDistributionStatistical()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadEmployees() => Employees = await employeeService.GetAll(SupportConstants.EmployeeBaseUrl);
+
+    private void GetEmployeeDistributionData()
+    {
+        EmployeeDistributionDatas = Employees
+            .GroupBy(e => e.Branch?.Department?.Name)
+            .Select(g => new EmployeeDistributionData { Department = g.Key, EmployeeCount = g.Count() })
+            .ToList();
+    }
+
+    public class EmployeeDistributionData
+    {
+        public string? Department { get; set; }
+        public int EmployeeCount { get; set; }
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

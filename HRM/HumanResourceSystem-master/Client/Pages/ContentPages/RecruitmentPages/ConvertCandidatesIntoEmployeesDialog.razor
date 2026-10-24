@@ -1,0 +1,196 @@
+﻿
+<SfDialog Width="750px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> Convert candidates - @Candidate.Name </Header>
+        <Content>
+            <EditForm Model="Employee" Enhance OnSubmit="Save"> 
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-control align-content-center">
+                            <img src="@Employee.Photo" width="100" height="100" />
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-1"></div>
+                            <div class="col-lg-5">                                                               
+                                <div class="form-group">
+                                    <label class="form-label">Gender</label>
+                                    <SfDropDownList TValue="string" TItem="StatusType" Placeholder="Selected Gender" DataSource="LocalData">
+                                        <DropDownListFieldSettings Value="Text" Text="Text"></DropDownListFieldSettings>
+                                        <DropDownListEvents TValue="string" TItem="StatusType" ValueChange="OnGenderChange"></DropDownListEvents>
+                                    </SfDropDownList>
+                                </div>     
+                                <div class="form-group mt-2">
+                                    <label class="form-label">Date Of Birth</label>
+                                    <InputDate @bind-Value="Employee.DateOfBirth" class="form-control" />
+                                    @* <ValidationMessage For="() => EmployeeGroup1.CivilId" class="text-danger" /> *@
+                                </div>
+                                <div class="form-group mt-2">
+                                    <label class="form-label">Civil Id</label>
+                                    <InputText @bind-Value="Employee.CivilId" class="form-control" />
+                                    @* <ValidationMessage For="() => EmployeeGroup1.CivilId" class="text-danger" /> *@
+                                </div>
+                                <div class="form-group mt-2">
+                                    <label class="form-label">File Number</label>
+                                    <InputText @bind-Value="Employee.FileNumber" class="form-control" />
+                                    @* <ValidationMessage For="() => EmployeeGroup1.CivilId" class="text-danger" /> *@
+                                </div>                                
+                                <div class="form-group mt-2">
+                                    <label class="form-label @(ImageUploadMessage == ""?"":"text-danger")">
+                                        @(ImageUploadMessage == "" ? "Upload Image" : ImageUploadMessage)
+                                    </label>
+                                    <InputFile class="form-control" OnChange="UploadImage"></InputFile>
+                                    @* <ValidationMessage For="() => EmployeeGroup1.Photo" class="text-danger" /> *@
+                                </div>
+                            </div>
+                            <div class="col-lg-5">
+                                <div class="form-group">
+                                    <label class="form-label">Salary</label>
+                                    <InputNumber @bind-Value="Employee.Salary" class="form-control" />
+                                    @* <ValidationMessage For="() => EmployeeGroup1.FileNumber" class="text-danger" /> *@
+                                </div>
+                                <div class="form-group mt-2">
+                                    <label class="form-label">Select Country</label>
+                                    <SfDropDownList TValue="string" TItem="Country" Placeholder="Select Country" DataSource="Countries">
+                                        <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                        <DropDownListEvents TValue="string" TItem="Country" ValueChange="OnCountryValueChange"></DropDownListEvents>
+                                    </SfDropDownList>
+                                </div>
+                                <div class="form-group mt-3">
+                                    <label class="form-label">Select City</label>
+                                    <SfDropDownList TValue="string" TItem="City" Placeholder="Select City" DataSource="SelectedCities">
+                                        <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                        <DropDownListEvents TValue="string" TItem="City" ValueChange="OnCityValueChange"></DropDownListEvents>
+                                    </SfDropDownList>
+                                </div>
+                                <div class="form-group mt-2">
+                                    <label class="form-label">Select Town</label>
+                                    <SfDropDownList TValue="string" TItem="Town" Placeholder="Select Town" DataSource="SelectedTowns">
+                                        <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                        <DropDownListEvents TValue="string" TItem="Town" ValueChange="OnTownValueChange"></DropDownListEvents>
+                                    </SfDropDownList>
+                                </div>
+                            </div>
+                        </div>                        
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="SAVE" Type="ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    [Parameter] public Candidate Candidate { get; set; } = new();
+    [Parameter] public EventCallback<Employee> HandleSaveCCTEEvent { get; set; }
+
+    public Employee Employee { get; set; } = new();
+
+    public string Title { get; set; } = "Add";
+    public string GeneralDepartment { get; set; } = "";
+    public string Department { get; set; } = "";
+    public string Branch { get; set; } = "";
+    public string Country { get; set; } = "";
+    public string City { get; set; } = "";
+    public string Town { get; set; } = "";
+
+    public List<Country> Countries { get; set; } = new();
+    public List<City> Cities { get; set; } = new();
+    public List<Town> Towns { get; set; } = new();
+
+    public List<City> SelectedCities { get; set; } = new();
+    public List<Town> SelectedTowns { get; set; } = new();
+
+    public class StatusType
+    {
+        public string Text { get; set; }
+    }
+    List<StatusType> LocalData = new List<StatusType> {
+    new StatusType() { Text= "Male" },
+    new StatusType() { Text= "Female" },
+    };
+
+    protected async override Task OnInitializedAsync()
+    {
+        allState.CandidateAction += LoadDefaults;
+    }
+
+    private async void LoadDefaults()
+    {
+        Countries = await countryService.GetAll(Constants.CountryBaseUrl);
+        Cities = await cityService.GetAll(Constants.CityBaseUrl);
+        Towns = await townService.GetAll(Constants.TownBaseUrl);
+    }
+
+    // Country / City / Town
+    public void OnCountryValueChange(ChangeEventArgs<string, Country> args)
+    {
+        SelectedCities = Cities.Where(c => c.CountryId == int.Parse(args.Value)).ToList();
+    }
+
+    public void OnCityValueChange(ChangeEventArgs<string, City> args)
+    {
+        SelectedTowns = Towns.Where(t => t.CityId == int.Parse(args.Value)).ToList();
+    }
+
+    public void OnTownValueChange(ChangeEventArgs<string, Town> args) => Employee.TownId = int.Parse(args.Value);
+
+    private bool IsVisible { get; set; } = false;
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(Employee.CivilId) || Employee.TownId <= 0)
+            await dialogService.AlertAsync("You need to provide Department name.", "Alert!");
+        else
+        {
+            Employee.Name = Candidate.Name;
+            Employee.JobName = Candidate.Recruitment.JobName;
+            Employee.Address = Candidate.Address;
+            Employee.TelephoneNumber = Candidate.TelephoneNumber;
+            Employee.Other = "Create form Candidate";
+            Employee.BranchId = Candidate.Recruitment.BranchId;
+            Employee.Email = Candidate.Email;
+            await HandleSaveCCTEEvent.InvokeAsync(Employee);
+        }
+        
+    }
+
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    public void OnGenderChange(ChangeEventArgs<string, StatusType> args)
+    {
+        Employee.Gender = args.Value.ToString();
+    }
+
+    // File Upload
+    string ImageUploadMessage = "";
+    private async Task UploadImage(InputFileChangeEventArgs e)
+    {
+        if (e.File.Name.ToLower().Contains(".png"))
+        {
+            var format = "image/png";
+            var resizeImage = await e.File.RequestImageFileAsync(format, 300, 300);
+            var buffer = new byte[resizeImage.Size];
+            await resizeImage.OpenReadStream().ReadAsync(buffer);
+            var imageData = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+            ImageUploadMessage = "";
+            Employee.Photo = imageData;
+            imageData = "";
+            return;
+        }
+        ImageUploadMessage = "PNG file needed.";
+        return;
+    }
+}

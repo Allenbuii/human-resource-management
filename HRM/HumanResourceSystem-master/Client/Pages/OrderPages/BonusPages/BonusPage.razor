@@ -1,0 +1,183 @@
+﻿@implements IDisposable
+
+@if (allState.ShowBonus)
+{
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="float-start">Manage Employees Bonus</h4>
+                    </div>
+                    <div class="card-body">
+                        @{
+                            var Tool = (new List<string>() { "Search", "ExcelExport", "PdfExport", "Print" });
+                        }
+                        <SfGrid DataSource="@Bonuses" AllowPaging="true" AllowSorting="true" Toolbar=@Tool AllowExcelExport="true" @ref="DefaultGrid" AllowPdfExport="true">
+                            <GridPageSettings PageSize="5"></GridPageSettings>
+                            <GridEvents OnToolbarClick="ToolbarClickHanlder" TValue="BonusData"></GridEvents>
+                            <GridColumns>
+                                <GridColumn Field=@nameof(BonusData.EmployeeId) HeaderText="Employee ID"></GridColumn>
+                                <GridColumn Field=@nameof(BonusData.Employee) HeaderText="Employee Name"></GridColumn>
+                                <GridColumn Field=@nameof(BonusData.Name) HeaderText="Bonus Name"></GridColumn>
+                                <GridColumn Field=@nameof(BonusData.BonusAmount) HeaderText="Bonus Amount"></GridColumn>
+                                <GridColumn Field=@nameof(BonusData.BonusDate) HeaderText="Bonus Date"></GridColumn>
+                                <GridColumn HeaderText="Action">
+                                    <Template>
+                                        @{
+                                            var item = (context as BonusData);
+                                            <div>
+                                                @if (item!.Bonus!.BonusDate > DateTime.Now)
+                                                {
+                                                    <i class="bi bi-pencil text-info" id="cursorStyle" @onclick="() => EditClicked(item!.Bonus!)"></i>
+                                                    <span> </span>
+                                                    <i class="bi bi-trash text-danger" id="cursorStyle" @onclick="() => DeleteClicked(item!.Bonus!)"></i>
+                                                }else{
+                                                    <i class="bi bi-eye text-info" id="cursorStyle" @onclick="() => ShowClicked(item!.Bonus!)"></i>
+                                                }
+                                            </div>
+                                        }
+                                    </Template>
+                                </GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .cursorStyle {
+        cursor: pointer
+    }
+</style>
+
+<BonusDialog @ref="bonusDialog"
+             Employee="Employee"
+             Bonus="Bonus"
+             HandleSaveOperationEvent="HandleSaveOperationEvent">
+</BonusDialog>
+
+@code {
+    private SfGrid<BonusData>? DefaultGrid;
+    BonusDialog? bonusDialog;
+    Bonus Bonus = new();
+    Employee Employee = new();
+    public List<Bonus> BonusesData { get; set; } = new();
+
+    public class BonusData
+    {
+        public Bonus? Bonus { get; set; }
+        public int EmployeeId { get; set; }
+        public string? Employee { get; set; }
+        public string? Name { get; set; }
+        public string? BonusAmount { get; set; }
+        public string? BonusDate { get; set; }
+    }
+
+    public List<BonusData> Bonuses { get; set; } = new List<BonusData>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        allState.Action += StateHasChanged;
+        allState.BonusAction += LoadDefaults;
+    }
+
+    private async void LoadDefaults()
+    {
+        await GetBonuses();
+        StateHasChanged();
+    }
+
+    private async Task GetBonuses()
+    {
+        BonusesData = await bonusService.GetAll(Constants.BonusBaseUrl);
+        await GetBonusData();
+    }
+
+    private async Task GetBonusData()
+    {
+        Bonuses = BonusesData
+        .Select(s => new BonusData
+            {
+                Bonus = s,
+                EmployeeId = s.EmployeeId,
+                Employee = s.Employee!.Name,
+                Name = s.Name,
+                BonusAmount = s.BonusAmount.ToString("N0") + " VND",
+                BonusDate = s.BonusDate.ToString("MM/dd/yyyy")
+            })
+        .ToList();
+    }
+
+    void OpenDialog() => bonusDialog?.OpenDialog();
+
+    //Add or Update
+    private async Task HandleSaveOperationEvent(Bonus item)
+    {
+        var result = await bonusService.Update(item, Constants.BonusBaseUrl);
+        bool successCheck = await DisplayMessage(result.Flag, result.Message);
+        if (successCheck)
+        {
+            Bonus = new();
+            bonusDialog?.CloseDialog();
+            await GetBonuses();
+        }
+    }
+
+    // Edit
+    private void EditClicked(Bonus item)
+    {
+        Bonus = item;
+        Employee = item!.Employee!;
+        bonusDialog?.ChangeTitle("Update");
+        OpenDialog();
+    }
+
+    //Delete
+    private async Task DeleteClicked(Bonus item)
+    {
+        bool confrim = await dialogService.ConfirmAsync($"Are you sure you wanna delete this?", "Confrim Delete");
+        if (!confrim) return;
+
+        var response = await bonusService.DeleteById(item.Id, Constants.BonusBaseUrl);
+        var result = await DisplayMessage(response.Flag, response.Message);
+        if (result) await GetBonuses();
+    }
+
+    // Show
+    private void ShowClicked(Bonus item)
+    {
+        Bonus = item;
+        bonusDialog?.ChangeTitle("View");
+        OpenDialog();
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+
+    // Excel Export / PDF Export
+    public async Task ToolbarClickHanlder(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Text == "Excel Export")
+            await this.DefaultGrid!.ExcelExport()!;
+
+        if (args.Item.Text == "PDF Export")
+            await this.DefaultGrid!.PdfExport()!;
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

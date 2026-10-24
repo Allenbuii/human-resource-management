@@ -1,0 +1,260 @@
+﻿@using Syncfusion.Blazor.Charts
+
+@if (IsVisible)
+{
+    <div class="row">
+        <div class="col-lg-9 border-end" style="height: 100%">
+            <SfChart Title="Overtime Distribution" Width="100%">
+                <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                </ChartPrimaryXAxis>
+                <ChartPrimaryYAxis Title="Overtimes" Minimum="0" Interval="1">
+                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                </ChartPrimaryYAxis>
+                <ChartAxis Title="Days" Name="YAxis" OpposedPosition="true" Interval="1" Minimum="0">
+                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                </ChartAxis>
+                <ChartSeriesCollection>
+                    <ChartSeries DataSource="@OvertimeChartData" Name="Total Overtimes" XName="MonthAbbreviation" YName="TotalOvertimes" ColumnSpacing="0.1" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                    <ChartSeries DataSource="@OvertimeChartData" Name="Accepted" XName="MonthAbbreviation" YName="Accepted" ColumnSpacing="0.1" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                    <ChartSeries DataSource="@OvertimeChartData" Name="Rejected" XName="MonthAbbreviation" YName="Rejected" ColumnSpacing="0.1" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                    <ChartSeries DataSource="@OvertimeChartData" Name="Approved Days" XName="MonthAbbreviation" YName="ApprovedDays" Width="2" Type="ChartSeriesType.Line" YAxisName="YAxis">
+                        <ChartMarker Visible="true" Width="7" IsFilled="true" Height="7" Shape="ChartShape.Pentagon"></ChartMarker>
+                    </ChartSeries>
+                </ChartSeriesCollection>
+                <ChartTooltipSettings Header="<b>${point.tooltip}</b>" Enable="true" Shared="true" Opacity="1"></ChartTooltipSettings>
+                <ChartLegendSettings EnableHighlight="true"></ChartLegendSettings>
+            </SfChart>
+        </div>
+        <div class="col-lg-3" style="padding-left: 0 !important;">
+            <div class="card-header">
+                <h6 class="text-center">Monthly Analysis</h6>
+            </div>
+            <div class="card-body">
+                @if (OvertimeChartData.Count > 1)
+                {
+                    var lastMonthData = OvertimeChartData.Last();
+                    var previousMonthData = OvertimeChartData[OvertimeChartData.Count - 2];
+
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Total Overtimes:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @if (lastMonthData.TotalOvertimes - previousMonthData.TotalOvertimes > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.TotalOvertimes - previousMonthData.TotalOvertimes < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.TotalOvertimes, previousMonthData.TotalOvertimes)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Accepted:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @if (lastMonthData.Accepted - previousMonthData.Accepted > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.Accepted - previousMonthData.Accepted < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.Accepted, previousMonthData.Accepted)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Rejected:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @if (lastMonthData.Rejected - previousMonthData.Rejected > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.Rejected - previousMonthData.Rejected < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.Rejected, previousMonthData.Rejected)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Approved Days:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @if (lastMonthData.ApprovedDays - previousMonthData.ApprovedDays > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.ApprovedDays - previousMonthData.ApprovedDays < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.ApprovedDays, previousMonthData.ApprovedDays)
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h6 class="mb-0">No data available for comparison</h6>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="card-header border-top">
+                <h6 class="text-center">Monthly Recruitment Performance</h6>
+            </div>
+            <div class="card-body">
+                @if (OvertimeChartData.Count > 1)
+                {
+                    var lastMonthData = OvertimeChartData.Last();
+
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">% Accepted:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @CalculateMonthly(lastMonthData.TotalOvertimes, lastMonthData.Accepted)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">% Rejected:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @CalculateMonthly(lastMonthData.TotalOvertimes, lastMonthData.Rejected)
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h6 class="mb-0">No data available for comparison</h6>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>    
+}
+
+@code {
+    public List<Overtime> Overtimes { get; set; } = new();
+    [Parameter] public bool IsVisible { get; set; } = false;
+
+    public async void OpenOvertimesStatistical()
+    {
+        IsVisible = true;
+        await LoadOvertimes();
+        CalculateMonthly();
+        StateHasChanged();
+    }
+
+    public void CloseOvertimesStatistical()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadOvertimes() => Overtimes = await overtimeService.GetAll(SupportConstants.OvertimeBaseUrl);
+
+    private void CalculateMonthly()
+    {
+        var twelveMonths = Enumerable.Range(0, 12)
+            .Select(i => DateTime.Now.AddMonths(-i))
+            .Select(date => new DateTime(date.Year, date.Month, 1))
+            .ToList();
+
+        var startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-11);
+        var endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1).AddDays(-1);
+
+        var overtimeData = Overtimes
+            .Where(o => o.StartDate <= endDate && o.EndDate >= startDate)
+            .GroupBy(o => new DateTime(o.StartDate.Year, o.StartDate.Month, 1))
+            .Select(g => new OvertimeData
+                {
+                    Month = g.Key, 
+                    TotalOvertimes = g.Count(), 
+                    ApprovedDays = g.Where(o => o.Status == "Accept").Sum(o => o.NumberOfDate),
+                    Accepted = g.Count(o => o.Status == "Accept"),
+                    Rejected = g.Count(o => o.Status == "Reject"),
+                    MonthAbbreviation = g.Key.ToString("yyyy MMM") 
+                })
+            .ToList();
+
+        foreach (var month in twelveMonths)
+        {
+            if (!overtimeData.Any(d => d.Month.Year == month.Year && d.Month.Month == month.Month))
+            {
+                overtimeData.Add(new OvertimeData
+                    {
+                        Month = month,
+                        TotalOvertimes = 0,
+                        ApprovedDays = 0,
+                        Accepted = 0,
+                        Rejected = 0,
+                        MonthAbbreviation = month.ToString("yyyy MMM")
+                    });
+            }
+        }
+
+        OvertimeChartData = overtimeData.OrderBy(d => d.Month).ToList();
+    }
+
+    public class OvertimeData
+    {
+        public DateTime Month { get; set; }
+        public int TotalOvertimes { get; set; }
+        public int ApprovedDays { get; set; }
+        public int Accepted { get; set; }
+        public int Rejected { get; set; }
+        public string? MonthAbbreviation { get; set; }
+    }
+
+    public List<OvertimeData> OvertimeChartData { get; set; } = new List<OvertimeData>();
+
+
+    private string CalculateChange(double currentScore, double previousScore)
+    {
+        double change = currentScore - previousScore;
+        string changeIndicator = (change == 0) ? "No Change" : "";
+
+        if (change == 0) return changeIndicator;
+
+        double percentageChange = previousScore != 0 ? (change / previousScore) * 100 : 0;
+
+        return $"{changeIndicator} {Math.Abs(change).ToString("N0")} ({Math.Abs(percentageChange):0.0}%)";
+    }
+
+    private string CalculateMonthly(double totalScore, double Score)
+    {
+        if (totalScore == 0) return "#%";
+
+        double percentageChange = (Score / totalScore) * 100;
+
+        return $"{Math.Abs(percentageChange):0.0}%";
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}
+

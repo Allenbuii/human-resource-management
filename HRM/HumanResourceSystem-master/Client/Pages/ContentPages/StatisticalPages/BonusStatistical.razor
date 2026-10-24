@@ -1,0 +1,215 @@
+﻿@using Syncfusion.Blazor.Charts
+
+@if (IsVisible)
+{
+    <div class="row">
+        <div class="col-lg-9 border-end" style="height: 100%">
+            <SfChart Title="Bonus Distribution" Width="100%">
+                <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                </ChartPrimaryXAxis>
+                <ChartPrimaryYAxis Title="Total Bonus Amount" Minimum="0" Interval="5000000" LabelFormat="0,0 VND">
+                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                </ChartPrimaryYAxis>
+                <ChartAxis Title="Employee Count" Name="YAxis" OpposedPosition="true" Interval="1" Minimum="0">
+                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                </ChartAxis>
+                <ChartSeriesCollection>
+                    <ChartSeries DataSource="@BonusChartData" Name="Bonus Amount" XName="MonthAbbreviation" YName="TotalBonusAmount" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                    <ChartSeries DataSource="@BonusChartData" Name="Bonus Count" XName="MonthAbbreviation" YName="BonusCount" Width="2" Type="ChartSeriesType.Line" YAxisName="YAxis">
+                        <ChartMarker Visible="true" Width="7" IsFilled="true" Height="7" Shape="ChartShape.Pentagon"></ChartMarker>
+                    </ChartSeries>
+                    <ChartSeries DataSource="@BonusChartData" Name="Employee Bonus Count" XName="MonthAbbreviation" YName="EmployeeCount" Width="2" Type="ChartSeriesType.Line" YAxisName="YAxis">
+                        <ChartMarker Visible="true" Width="7" IsFilled="true" Height="7" Shape="ChartShape.Triangle"></ChartMarker>
+                    </ChartSeries>
+                </ChartSeriesCollection>
+                <ChartTooltipSettings Header="<b>${point.tooltip}</b>" Enable="true" Shared="true" Opacity="1"></ChartTooltipSettings>
+                <ChartLegendSettings EnableHighlight="true"></ChartLegendSettings>
+            </SfChart>
+        </div>
+        <div class="col-lg-3" style="padding-left: 0 !important;">
+            <div class="card-header">
+                <h6 class="text-center">Monthly Analysis</h6>
+            </div>
+            <div class="card-body">
+                @if (BonusChartData.Count > 1)
+                {
+                    var lastMonthData = BonusChartData.Last();
+                    var previousMonthData = BonusChartData[BonusChartData.Count - 2];
+
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-5">
+                            <h6 class="mb-0">Total Bonus:</h6>
+                        </div>
+                        <div class="col-sm-7 text-secondary">
+                            @if (lastMonthData.TotalBonusAmount - previousMonthData.TotalBonusAmount > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.TotalBonusAmount - previousMonthData.TotalBonusAmount < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.TotalBonusAmount, previousMonthData.TotalBonusAmount)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-5">
+                            <h6 class="mb-0">Emp. Reward:</h6>
+                        </div>
+                        <div class="col-sm-7 text-secondary">
+                            @if (lastMonthData.EmployeeCount - previousMonthData.EmployeeCount > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.EmployeeCount - previousMonthData.EmployeeCount < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.EmployeeCount, previousMonthData.EmployeeCount)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-5">
+                            <h6 class="mb-0">Bonus Count:</h6>
+                        </div>
+                        <div class="col-sm-7 text-secondary">
+                            @if (lastMonthData.BonusCount - previousMonthData.BonusCount > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.BonusCount - previousMonthData.BonusCount < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.BonusCount, previousMonthData.BonusCount)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-5">
+                            <h6 class="mb-0">Average Bonus:</h6>
+                        </div>
+                        <div class="col-sm-7 text-secondary">
+                            @if (lastMonthData.AverageBonusAmount - previousMonthData.AverageBonusAmount > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.AverageBonusAmount - previousMonthData.AverageBonusAmount < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.AverageBonusAmount, previousMonthData.AverageBonusAmount)
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h6 class="mb-0">No data available for comparison</h6>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>    
+}
+
+@code {
+    public List<Bonus> Bonuses { get; set; } = new();
+    [Parameter] public bool IsVisible { get; set; } = false;
+
+    public async void OpenBonusesStatistical()
+    {
+        IsVisible = true;        
+        await LoadBonuses();
+        CalculateMonthlyBonuses();
+        StateHasChanged();
+    }
+
+    public void CloseBonusesStatistical()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadBonuses() => Bonuses = await bonusService.GetAll(SupportConstants.BonusBaseUrl);
+
+    private void CalculateMonthlyBonuses()
+    {
+        var twelveMonths = Enumerable.Range(0, 12)
+            .Select(i => DateTime.Now.AddMonths(-i))
+            .Select(date => new DateTime(date.Year, date.Month, 1))
+            .ToList();
+
+        var startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-11);
+        var endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1).AddDays(-1);
+
+        var groupedBonuses = Bonuses
+            .Where(b => b.BonusDate >= startDate && b.BonusDate <= endDate)
+            .GroupBy(b => new DateTime(b.BonusDate.Year, b.BonusDate.Month, 1))
+            .Select(g => new BonusData
+                {
+                    BonusDate = g.Key,
+                    TotalBonusAmount = g.Sum(b => b.BonusAmount),
+                    AverageBonusAmount = Math.Round(g.Average(b => b.BonusAmount), 2),
+                    BonusCount = g.Count(),
+                    EmployeeCount = g.Select(b => b.EmployeeId).Distinct().Count(),
+                    MonthAbbreviation = g.Key.ToString("yyyy") + " " + g.Key.ToString("MMM")
+                })
+            .ToList();
+
+        foreach (var month in twelveMonths)
+        {
+            if (!groupedBonuses.Any(g => g.BonusDate.Year == month.Year && g.BonusDate.Month == month.Month))
+            {
+                groupedBonuses.Add(new BonusData
+                    {
+                        BonusDate = month,
+                        TotalBonusAmount = 0,
+                        AverageBonusAmount = 0,
+                        BonusCount = 0,
+                        EmployeeCount = 0,
+                        MonthAbbreviation = month.Year.ToString() + " " + month.ToString("MMM")
+                    });
+            }
+        }
+
+        groupedBonuses = groupedBonuses.OrderBy(g => g.BonusDate).ToList();
+
+        BonusChartData = groupedBonuses;
+    }
+
+    public class BonusData
+    {
+        public DateTime BonusDate { get; set; }
+        public double TotalBonusAmount { get; set; }
+        public double AverageBonusAmount { get; set; }
+        public int BonusCount { get; set; }
+        public int EmployeeCount { get; set; }
+        public string? MonthAbbreviation { get; set; }
+    }
+
+    public List<BonusData> BonusChartData { get; set; } = new List<BonusData>();
+
+    private string CalculateChange(double currentScore, double previousScore)
+    {
+        double change = currentScore - previousScore;
+        string changeIndicator = (change == 0) ? "No Change" : "";
+
+        if (change == 0) return changeIndicator;
+
+        double percentageChange = previousScore != 0 ? (change / previousScore) * 100 : 0;
+
+        return $"{changeIndicator} {Math.Abs(change).ToString("N0")} ({Math.Abs(percentageChange):0.0}%)";
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}
+

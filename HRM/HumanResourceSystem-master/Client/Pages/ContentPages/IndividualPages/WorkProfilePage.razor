@@ -1,0 +1,271 @@
+﻿@implements IDisposable
+
+@if (allState.ShowWorkProfile)
+{
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="float-start">Work Profile - @ProfileType</h4>
+                        <div class="dropdown float-end">
+                            @if (!ProfileType!.Equals("Sanctions") && !ProfileType!.Equals("Degrees") && !ProfileType!.Equals("Training Program") && !ProfileType!.Equals("Bonus"))
+                            {                      
+                                <button class="btn btn-outline-success me-2" @onclick="AddClicked">
+                                    <i class="bi bi-plus-circle-dotted"> </i> @ProfileType Request
+                                </button>
+                            }
+                            <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-filter-circle"> </i> Profile type 
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><button class="dropdown-item" @onclick="MySanctionsClicked">
+                                        <i class="bi bi-x-octagon text-primary"></i>
+                                        My Sanctions
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item" @onclick="MyOvertimeClicked">
+                                        <i class="bi bi-stopwatch text-danger"></i>
+                                        My Overtime
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item" @onclick="MyVacationClicked">
+                                        <i class="bi bi-backpack3 text-success"></i>
+                                        My Vacation
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item" @onclick="MyDegreeClicked">
+                                        <i class="bi bi-file-earmark-plus text-info"></i>
+                                        My Degrees
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><button class="dropdown-item" @onclick="MyTrainingProgramClicked">
+                                        <i class="bi bi-mortarboard"></i>
+                                        My Training Program
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item" @onclick="MyBonusClicked">
+                                        <i class="bi bi-cash-coin text-warning"></i>
+                                        My Bonus
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>                   
+                    <MySanction @ref="mySanction"
+                                CurrentEmployeeId="CurrentEmployee.Id" />
+                    <MyOvertime @ref="myOvertime"
+                                CurrentEmployeeId="CurrentEmployee.Id" />
+                    <MyVacation @ref="myVacation"
+                                CurrentEmployeeId="CurrentEmployee.Id" />
+                    <MyDegree @ref="myDegree"
+                                CurrentEmployee="CurrentEmployee" />
+                    <MyTrainingProgram @ref="myTrainingProgram"
+                              CurrentEmployee="CurrentEmployee" />
+                    <MyBonus @ref="myBonus"
+                             CurrentEmployee="CurrentEmployee" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<OvertimeDialog @ref="overtimeDialog"
+                ItemModel="Overtime"
+                OvertimeTypes="OvertimeTypes"
+                isRequested = "true"
+                HandleSaveOperationEvent="SaveOvertimeEvent">
+</OvertimeDialog>
+
+<VacationDialog @ref="vacationDialog"
+                ItemModel="Vacation"
+                VacationTypes="VacationTypes"
+                isRequested="true"
+                HandleSaveOperationEvent="SaveVacationEvent">
+</VacationDialog>
+
+@code {
+
+    public Employee CurrentEmployee { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+        try
+        {
+            var CurrentUserId = await customAuthStateProvider.GetCurrentUserId();
+            var CurrentUser = await accountService.GetUserById(int.Parse(CurrentUserId));
+            CurrentEmployee = await employeeService.GetById(CurrentUser.EmployeeId, Constants.EmployeeBaseUrl);
+        }
+        catch
+        {
+            Console.WriteLine("Error");
+        }
+        allState.Action += StateHasChanged;
+        allState.WorkProfileAction += LoadDefaults;
+    }
+
+    private async void LoadDefaults()
+    {
+        await GetOvertimeTypes();
+        await GetVacationTypes();
+        MyVacationClicked();
+    }
+
+    private string? ProfileType = "Vacation";
+
+    // Get OvertimeType / SanctionType / VacationType
+    private async Task GetOvertimeTypes() => OvertimeTypes = await overtimeTypeService.GetAll(Constants.OvertimeTypeBaseUrl);
+    private async Task GetVacationTypes() => VacationTypes = await vacationTypeService.GetAll(Constants.VacationTypeBaseUrl);
+
+    MySanction? mySanction;
+    private void MySanctionsClicked()
+    {
+        Reset();
+        ProfileType = "Sanctions";
+        mySanction?.OpenMySanction();        
+        StateHasChanged();
+    }
+
+    MyOvertime? myOvertime;
+    private void MyOvertimeClicked()
+    {
+        Reset();
+        ProfileType = "Overtime";
+        myOvertime?.OpenMyOvertime();        
+        StateHasChanged();
+    }
+
+    MyVacation? myVacation;
+    private void MyVacationClicked()
+    {
+        Reset();
+        ProfileType = "Vacation";
+        myVacation?.OpenMyVacation();
+        StateHasChanged();
+    }
+
+    MyDegree? myDegree;
+    private void MyDegreeClicked()
+    {
+        Reset();
+        ProfileType = "Degrees";
+        myDegree?.OpenMyDegree();
+        StateHasChanged();
+    }
+
+    MyTrainingProgram? myTrainingProgram;
+    private void MyTrainingProgramClicked()
+    {
+        Reset();
+        ProfileType = "Training Program";
+        myTrainingProgram?.OpenMyTrainingPrograms();
+        StateHasChanged();
+    }
+
+    MyBonus? myBonus;
+    private void MyBonusClicked()
+    {
+        Reset();
+        ProfileType = "Bonus";
+        myBonus?.OpenMyBonuses();
+        StateHasChanged();
+    }
+
+    private void Reset()
+    {
+        mySanction?.CloseMySanction();
+        myOvertime?.CloseMyOvertime();
+        myVacation?.CloseMyVacation();
+        myDegree?.CloseMyDegree();
+        myTrainingProgram?.CloseMyTrainingPrograms();
+        myBonus?.CloseMyBonuses();
+    }
+
+    private void AddClicked()
+    {
+        if (ProfileType!.Equals("Overtime"))
+            AddOvertimeClicked();
+        if (ProfileType!.Equals("Vacation"))
+            AddVacationClicked();
+    }
+
+    // Add Overtime clicked
+    OvertimeDialog? overtimeDialog;
+    Overtime Overtime = new();
+    List<OvertimeType> OvertimeTypes = [];
+    private void AddOvertimeClicked()
+    {
+        Overtime.EmployeeId = CurrentEmployee.Id;
+        Overtime.Employee = CurrentEmployee;
+        overtimeDialog!.ChangeTitle("Request");
+        overtimeDialog!.OpenDialog();
+    }
+
+    // Save Overtime Handler
+    async Task SaveOvertimeEvent(Overtime item)
+    {
+        item.EmployeeId = CurrentEmployee.Id;
+        item.Employee = null;
+        var (flag, message) = await overtimeService.Insert(item, Constants.OvertimeBaseUrl);
+        var response = await DisplayMessage(flag, message);
+        if (response)
+        {
+            Overtime = new();
+            overtimeDialog!.CloseDialog();
+            myOvertime?.OpenMyOvertime();
+            StateHasChanged();
+        }
+    }
+
+    // Add Vacation clicked
+    VacationDialog? vacationDialog;
+    Vacation Vacation = new();
+    List<VacationType> VacationTypes = [];
+    private void AddVacationClicked()
+    {
+        Vacation.EmployeeId = CurrentEmployee.Id;
+        Vacation.Employee = CurrentEmployee;
+        vacationDialog!.ChangeTitle("Request");
+        vacationDialog!.OpenDialog();
+    }
+
+    // Save Vacation Handler
+    async Task SaveVacationEvent(Vacation item)
+    {
+        item.EmployeeId = CurrentEmployee.Id;
+        item.Employee = null;
+        var (flag, message) = await vacationService.Insert(item, Constants.VacationBaseUrl);
+        var response = await DisplayMessage(flag, message);
+        if (response)
+        {
+            Vacation = new();
+            vacationDialog!.CloseDialog();
+            myVacation?.OpenMyVacation();
+            StateHasChanged();
+        }
+    }
+
+    // Display message using dialog service
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

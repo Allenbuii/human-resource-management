@@ -1,0 +1,183 @@
+﻿<SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> @Title Branch </Header>
+        <Content>
+            <EditForm Model="Branch" Enhance OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Id</label>
+                            <input @bind="Branch.Id" class="form-control" disabled />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <InputText @bind-Value="Branch.Name" class="form-control" disabled="@isView" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <InputText @bind-Value="Branch.Email" class="form-control" disabled="@isView" />
+                        </div>
+                        <div class="form-group mt-1">
+                            <label class="form-label">Telephone Number</label>
+                            <InputText @bind-Value="Branch.TelephoneNumber" class="form-control" disabled="@isView" />
+                        </div>
+                        <div class="form-group mt-3 mb-3">
+                            <label class="form-label">Select Department</label>
+                            @if (Branch.Department != null)
+                            {
+                                string selected = Branch.Department!.Name!;
+                                <SfDropDownList TValue="string" TItem="Department" Placeholder="@selected" DataSource="Departments" Enabled="!isView">
+                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="Department" ValueChange="OnValueChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+                            else
+                            {
+                                <SfDropDownList TValue="string" TItem="Department" Placeholder="Selected Department" DataSource="Departments" Enabled="!isView">
+                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="Department" ValueChange="OnValueChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+                        </div>
+                        <div class="form-group mt-3 mb-3">
+                            <label class="form-label">Select Supervisor</label>
+                            @{
+                                string SupervisorName = Branch.SupervisorName == null
+                                ? "Not assigned"
+                                : Branch.SupervisorName == "Not assigned"
+                                ? "Not assigned"
+                                : Branch.SupervisorName;
+                            }
+                            <SfDropDownList TValue="Employee" TItem="Employee" CssClass="template" Placeholder="@SupervisorName" DataSource="Employees" Enabled="!isDisabled && !isView">
+                                <DropDownListTemplates TItem="Employee">
+                                    <ItemTemplate Context="employeeContext">
+                                        <div>
+                                            <img class="empImage" src="@((employeeContext as Employee).Photo)" alt="employee" />
+                                            <div class="ename"> @((employeeContext as Employee).Name) </div>
+                                            <div class="job"> @((employeeContext as Employee).JobName) </div>
+                                        </div>
+                                    </ItemTemplate>
+                                    <HeaderTemplate>
+                                        <div class="header"> <span>Photo</span> <span class="info">Employee Info</span></div>
+                                    </HeaderTemplate>
+                                    <ValueTemplate Context="employeeContext">
+                                        <div class="dropdown-width" style="width:100%;height:100%; margin-left: 8px;">
+                                            <div class="name"> @((employeeContext as Employee).Name) </div>
+                                        </div>
+                                    </ValueTemplate>
+                                </DropDownListTemplates>
+                                <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                <DropDownListEvents TValue="Employee" TItem="Employee" ValueChange="OnSupervisorChange"></DropDownListEvents>
+                            </SfDropDownList>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Number Of Employees</label>
+                            <InputNumber @bind-Value="Branch.RequiredEmployees" class="form-control" disabled="@isView" />
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        @if (isView)
+        {
+            <DialogButton Content="CLOSE" IsPrimary="true" OnClick="CloseDialog" />
+        }
+        else
+        {
+            <DialogButton Content="SAVE" Type="ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+        }
+    </DialogButtons>
+</SfDialog>
+
+<style>
+    .empImage {
+        margin: 6px 16px;
+        float: left;
+        width: 50px;
+        height: 50px;
+    }
+
+    .ename {
+        display: block !important;
+        opacity: .87;
+        font-size: 16px;
+        margin-top: 8px;
+    }
+
+    .job {
+        opacity: .54;
+        font-size: 14px;
+        margin-top: -15px;
+        margin-bottom: 7px;
+    }
+
+    .name {
+        padding: 5px 0px;
+        opacity: .87;
+    }
+</style>
+
+@code {
+    [Parameter] public Branch Branch { get; set; } = new();
+    [Parameter] public List<Department> Departments { get; set; } = new();
+    [Parameter] public EventCallback<Branch> HandleSaveOperationEvent { get; set; }
+
+    public List<Employee> Employees { get; set; } = new();
+
+    private bool IsVisible { get; set; } = false;
+    public string Title { get; set; } = "Add";
+
+    private bool isView => Title == "View";
+
+    private bool isDisabled => Branch.SupervisorName == null;
+
+    private async void Save()
+    {
+        Branch.CurrentEmployees = 0;
+        Branch.CurrentEmployeeTransfers = 0;
+        if (Title == "Add") Branch.SupervisorName = "Not assigned";
+        if (string.IsNullOrEmpty(Branch.Name) || Branch.DepartmentId <= 0)
+            await dialogService.AlertAsync("You need to provide Department name.", "Alert!");
+        else
+            await HandleSaveOperationEvent.InvokeAsync(Branch);
+    }
+
+    public async void OpenDialog()
+    {
+        IsVisible = true;
+        if (Branch.Id != 0)
+            await GetEmployees();
+    }
+
+    private async Task GetEmployees(){
+        Employees = await branchService.GetAllEmployeeInBranch(Branch.Id, Constants.BranchBaseUrl);
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+
+    public void OnValueChange(ChangeEventArgs<string, Department> args)
+    {
+        Branch.DepartmentId = int.Parse(args.Value);
+    }
+
+    public void OnSupervisorChange(ChangeEventArgs<Employee, Employee> args)
+    {
+        Branch.SupervisorId = args.Value.Id;
+        Branch.SupervisorName = args.Value.Name;
+    }
+
+}
+

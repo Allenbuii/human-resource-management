@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Client</title>
+    <base href="/" />
+   
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="Client.styles.css" rel="stylesheet" />
+
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="bootstrap-icons/font/bootstrap-icons.min.css" rel="stylesheet" />
+
+    <script src="bootstrap/js/bootstrap.bundle.min.js"></script>
+    <link href="_content/Syncfusion.Blazor.Themes/bootstrap5.css" rel="stylesheet" />
+    <script src="_content/Syncfusion.Blazor.Core/scripts/syncfusion-blazor.min.js" type="text/javascript"></script>
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script>
+        // Triệt để ẩn toàn bộ popup / modal / overlay và banner bản quyền của Syncfusion
+        const killSyncfusionPopups = () => {
+            // 1. Quét tìm tất cả các phần tử chứa nội dung bản quyền Syncfusion
+            document.querySelectorAll('div, section, aside, .e-dialog, .e-dlg-container, .e-popup').forEach(el => {
+                const text = el.innerText || el.textContent || '';
+                if (text.includes('Claim your FREE account') || 
+                    text.includes('Syncfusion is trusted by') || 
+                    text.includes('trial version of Syncfusion') || 
+                    text.includes('Syncfusion license key is invalid')) {
+                    
+                    // Ẩn chính nó và tìm container modal để ẩn toàn bộ backdrop che màn hình
+                    el.style.setProperty('display', 'none', 'important');
+                    el.style.setProperty('visibility', 'hidden', 'important');
+                    el.style.setProperty('opacity', '0', 'important');
+                    el.style.setProperty('pointer-events', 'none', 'important');
+                    
+                    // Nếu là modal dialog, ẩn cả thẻ cha wrapper của nó
+                    const parentModal = el.closest('.e-dlg-container, .e-dialog, div[style*="position: fixed"]');
+                    if (parentModal) {
+                        parentModal.style.setProperty('display', 'none', 'important');
+                        parentModal.style.setProperty('visibility', 'hidden', 'important');
+                        parentModal.style.setProperty('pointer-events', 'none', 'important');
+                    }
+                }
+            });
+
+            // 2. Xóa bỏ lớp phủ làm mờ màn hình (modal backdrop / overlay) nếu có
+            document.querySelectorAll('.e-dlg-overlay, div[class*="overlay"][style*="fixed"]').forEach(overlay => {
+                overlay.style.setProperty('display', 'none', 'important');
+                overlay.style.setProperty('pointer-events', 'none', 'important');
+            });
+        };
+
+        const observer = new MutationObserver(killSyncfusionPopups);
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+        window.addEventListener('DOMContentLoaded', killSyncfusionPopups);
+        setInterval(killSyncfusionPopups, 300);
+    </script>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+
+</html>

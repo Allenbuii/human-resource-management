@@ -1,0 +1,148 @@
+﻿<SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> @Title Department </Header>
+        <Content>
+            <EditForm Model="Department" Enhance OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Id</label>
+                            <input @bind="Department.Id" class="form-control" disabled />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <InputText @bind-Value="Department.Name" class="form-control" disabled="@isView" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <InputText @bind-Value="Department.Email" class="form-control" disabled="@isView" />
+                        </div>
+                        <div class="form-group mt-1">
+                            <label class="form-label">Telephone Number</label>
+                            <InputText @bind-Value="Department.TelephoneNumber" class="form-control" disabled="@isView" />
+                        </div>
+                        <div class="form-group mt-3 mb-3">
+                            <label class="form-label">Select General Department</label>
+                            @if (Department.GeneralDepartment != null)
+                            {
+                                string selected = Department.GeneralDepartment!.Name!;
+                                <SfDropDownList TValue="string" TItem="GeneralDepartment" Placeholder="@selected" DataSource="GeneralDepartments" Enabled="!isView">
+                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="GeneralDepartment" ValueChange="OnValueChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+                            else
+                            {
+                                <SfDropDownList TValue="string" TItem="GeneralDepartment" Placeholder="Selected General Department" DataSource="GeneralDepartments" Enabled="!isView">
+                                    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                    <DropDownListEvents TValue="string" TItem="GeneralDepartment" ValueChange="OnValueChange"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
+                        </div>
+                        <div class="form-group mt-3 mb-3">
+                            <label class="form-label">Select Manager</label>
+                            @{
+                                string ManagerName = Department.ManagerName == null
+                                ? "Not assigned"
+                                : Department.ManagerName == "Not assigned"
+                                ? "Not assigned"
+                                : Department.ManagerName;
+                            }
+                            <SfDropDownList TValue="Employee" TItem="Employee" CssClass="template" Placeholder="@ManagerName" DataSource="Employees" Enabled="!isDisabled && !isView">
+                                <DropDownListTemplates TItem="Employee">
+                                    <ItemTemplate Context="employeeContext">
+                                        <div>
+                                            <img class="empImage" src="@((employeeContext as Employee).Photo)" alt="employee" />
+                                            <div class="ename"> @((employeeContext as Employee).Name) </div>
+                                            <div class="job"> @((employeeContext as Employee).JobName) </div>
+                                        </div>
+                                    </ItemTemplate>
+                                    <HeaderTemplate>
+                                        <div class="header"> <span>Photo</span> <span class="info">Employee Info</span></div>
+                                    </HeaderTemplate>
+                                    <ValueTemplate Context="employeeContext">
+                                        <div class="dropdown-width" style="width:100%;height:100%; margin-left: 8px;">
+                                            <div class="name"> @((employeeContext as Employee).Name) </div>
+                                        </div>
+                                    </ValueTemplate>
+                                </DropDownListTemplates>
+                                <DropDownListFieldSettings Value="Name"></DropDownListFieldSettings>
+                                <DropDownListEvents TValue="Employee" TItem="Employee" ValueChange="OnManagerChange"></DropDownListEvents>
+                            </SfDropDownList>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        @if (isView)
+        {
+            <DialogButton Content="CLOSE" IsPrimary="true" OnClick="CloseDialog" />
+        }
+        else
+        {
+            <DialogButton Content="SAVE" Type="ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+        }
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    [Parameter] public Department Department { get; set; } = new();
+    [Parameter] public List<GeneralDepartment> GeneralDepartments { get; set; } = new();
+    [Parameter] public EventCallback<Department> HandleSaveOperationEvent { get; set; }
+
+    public List<Employee> Employees { get; set; } = new();
+
+    private bool IsVisible { get; set; } = false;
+    public string Title { get; set; } = "Add";
+
+    private bool isView => Title == "View";
+
+    private bool isDisabled => Department.ManagerName == null;
+
+    private async void Save()
+    {
+        if (Title == "Add") Department.ManagerName = "Not assigned";
+        if (string.IsNullOrEmpty(Department.Name) || Department.GeneralDepartmentId <= 0)
+            await dialogService.AlertAsync("You need to provide Department name.", "Alert!");
+        else
+            await HandleSaveOperationEvent.InvokeAsync(Department);
+    }
+
+    private async Task GetEmployees()
+    {
+        Employees = await branchService.GetAllNonLeader(1084, Constants.BranchBaseUrl);
+        StateHasChanged();
+    }
+
+    public async void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+        await GetEmployees();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+
+    public void OnValueChange(ChangeEventArgs<string, GeneralDepartment> args)
+    {
+        Department.GeneralDepartmentId = int.Parse(args.Value);
+    }
+
+    public void OnManagerChange(ChangeEventArgs<Employee, Employee> args)
+    {
+        Department.ManagerId = args.Value.Id;
+        Department.ManagerName = args.Value.Name;
+    }
+}

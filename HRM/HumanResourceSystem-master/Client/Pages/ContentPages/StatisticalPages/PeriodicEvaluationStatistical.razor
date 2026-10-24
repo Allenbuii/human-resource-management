@@ -1,0 +1,247 @@
+﻿@using Syncfusion.Blazor.Charts
+
+@if (IsVisible)
+{
+    <div class="row">
+        <div class="col-lg-9 border-end" style="height: 100%">
+            <SfChart Title="Periodic Evaluation Scores" Width="100%">
+                <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                </ChartPrimaryXAxis>
+                <ChartPrimaryYAxis Title="Score" Minimum="0" Maximum="10" Interval="1">
+                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                </ChartPrimaryYAxis>
+                <ChartSeriesCollection>
+                    <ChartSeries DataSource="@SkillEvaluationChartData" Name="Technical Skills" XName="EvaluationDate" Width="2"
+                                    YName="TechnicalSkillsScore" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="7" Height="7" IsFilled="true" Shape="ChartShape.Circle">
+                        </ChartMarker>
+                    </ChartSeries>
+                    <ChartSeries DataSource="@SkillEvaluationChartData" Name="Communication Skills" XName="EvaluationDate" Width="2"
+                                    YName="CommunicationSkillsScore" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="6" IsFilled="true" Height="6" Shape="ChartShape.Triangle">
+                        </ChartMarker>
+                    </ChartSeries>
+                    <ChartSeries DataSource="@SkillEvaluationChartData" Name="Teamwork Skills" XName="EvaluationDate" Width="2"
+                                    YName="TeamworkSkillsScore" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="7" IsFilled="true" Height="7" Shape="ChartShape.Diamond">
+                        </ChartMarker>
+                    </ChartSeries>
+                    <ChartSeries DataSource="@SkillEvaluationChartData" Name="Problem Solving Skills" XName="EvaluationDate" Width="2"
+                                    YName="ProblemSolvingSkillsScore" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="5" IsFilled="true" Height="5" Shape="ChartShape.Rectangle">
+                        </ChartMarker>
+                    </ChartSeries>
+                    <ChartSeries DataSource="@SkillEvaluationChartData" Name="Work Ethic" XName="EvaluationDate" Width="2"
+                                    YName="WorkEthicScore" Type="ChartSeriesType.Line">
+                        <ChartMarker Visible="true" Width="7" IsFilled="true" Height="7" Shape="ChartShape.Pentagon">
+                        </ChartMarker>
+                    </ChartSeries>
+                </ChartSeriesCollection>
+                <ChartLegendSettings EnableHighlight="true"></ChartLegendSettings>
+                <ChartTooltipSettings Header="<b>${point.tooltip}</b>" Enable="true" Shared="true" Opacity="1"></ChartTooltipSettings>
+            </SfChart>
+        </div>
+        <div class="col-lg-3" style="padding-left: 0 !important;">
+            <div class="card-header">
+                <h6 class="text-center">Monthly Analysis</h6>
+            </div>
+            <div class="card-body">
+                @if (SkillEvaluationChartData.Count > 1)
+                {
+                    var lastMonthData = SkillEvaluationChartData.Last();
+                    var previousMonthData = SkillEvaluationChartData[SkillEvaluationChartData.Count - 2];
+
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Technical:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @if (lastMonthData.TechnicalSkillsScore - previousMonthData.TechnicalSkillsScore > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.TechnicalSkillsScore - previousMonthData.TechnicalSkillsScore < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.TechnicalSkillsScore, previousMonthData.TechnicalSkillsScore)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Communication:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @if (lastMonthData.CommunicationSkillsScore - previousMonthData.CommunicationSkillsScore > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.CommunicationSkillsScore - previousMonthData.CommunicationSkillsScore < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.CommunicationSkillsScore, previousMonthData.CommunicationSkillsScore)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Teamwork:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @if (lastMonthData.TeamworkSkillsScore - previousMonthData.TeamworkSkillsScore > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.TeamworkSkillsScore - previousMonthData.TeamworkSkillsScore < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.TeamworkSkillsScore, previousMonthData.TeamworkSkillsScore)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Problem Solving:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @if (lastMonthData.ProblemSolvingSkillsScore - previousMonthData.ProblemSolvingSkillsScore > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.ProblemSolvingSkillsScore - previousMonthData.ProblemSolvingSkillsScore < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.ProblemSolvingSkillsScore, previousMonthData.ProblemSolvingSkillsScore)
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Work Ethic:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @if (lastMonthData.WorkEthicScore - previousMonthData.WorkEthicScore > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.WorkEthicScore - previousMonthData.WorkEthicScore < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.WorkEthicScore, previousMonthData.WorkEthicScore)
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h6 class="mb-0">No data available for comparison</h6>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>    
+}
+
+@code {
+    public List<PeriodicEvaluation> PeriodicEvaluations { get; set; } = new();
+    [Parameter] public bool IsVisible { get; set; } = true;
+
+    public void OpenPeriodicEvaluationStatistical()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void ClosePeriodicEvaluationStatistical()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPeriodicEvaluations();
+        CalculateMonthlyAverages();
+        allState.Action += StateHasChanged;
+    }
+
+    private async Task LoadPeriodicEvaluations() => PeriodicEvaluations = await periodicEvaluationService.GetAll(SupportConstants.PeriodicEvaluationBaseUrl);
+
+    private void CalculateMonthlyAverages()
+    {
+        var twelveMonths = Enumerable.Range(0, 12)
+            .Select(i => DateTime.Now.AddMonths(-i))
+            .Select(date => new DateTime(date.Year, date.Month, 1))
+            .ToList();
+
+        var groupedEvaluations = PeriodicEvaluations
+            .GroupBy(e => new DateTime(e.EvaluationDate.Year, e.EvaluationDate.Month, 1))
+            .Select(g => new SkillEvaluationData
+                {
+                    EvaluationDate = g.Key,
+                    TechnicalSkillsScore = Math.Round(g.Average(e => e.TechnicalSkillsScore), 1),
+                    CommunicationSkillsScore = Math.Round(g.Average(e => e.CommunicationSkillsScore), 1),
+                    TeamworkSkillsScore = Math.Round(g.Average(e => e.TeamworkSkillsScore), 1),
+                    ProblemSolvingSkillsScore = Math.Round(g.Average(e => e.ProblemSolvingSkillsScore), 1),
+                    WorkEthicScore = Math.Round(g.Average(e => e.WorkEthicScore), 1)
+                })
+            .ToList();
+
+        foreach (var month in twelveMonths)
+        {
+            if (!groupedEvaluations.Any(g => g.EvaluationDate.Year == month.Year && g.EvaluationDate.Month == month.Month))
+            {
+                groupedEvaluations.Add(new SkillEvaluationData
+                    {
+                        EvaluationDate = month,
+                        TechnicalSkillsScore = 0,
+                        CommunicationSkillsScore = 0,
+                        TeamworkSkillsScore = 0,
+                        ProblemSolvingSkillsScore = 0,
+                        WorkEthicScore = 0
+                    });
+            }
+        }
+
+        groupedEvaluations = groupedEvaluations.OrderBy(g => g.EvaluationDate).ToList();
+
+        SkillEvaluationChartData = groupedEvaluations;
+    }
+
+    public class SkillEvaluationData
+    {
+        public DateTime EvaluationDate { get; set; }
+        public double TechnicalSkillsScore { get; set; }
+        public double CommunicationSkillsScore { get; set; }
+        public double TeamworkSkillsScore { get; set; }
+        public double ProblemSolvingSkillsScore { get; set; }
+        public double WorkEthicScore { get; set; }
+    }
+
+    public List<SkillEvaluationData> SkillEvaluationChartData { get; set; } = new List<SkillEvaluationData>();
+
+    private string CalculateChange(double currentScore, double previousScore)
+    {
+        double change = currentScore - previousScore;
+        string changeIndicator = (change == 0) ? "No Change" : "";
+
+        if (change == 0) return changeIndicator;
+
+        double percentageChange = previousScore != 0 ? (change / previousScore) * 100 : 0;
+
+        return $"{changeIndicator} {Math.Abs(change):0.0} ({Math.Abs(percentageChange):0.0}%)";
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}
+

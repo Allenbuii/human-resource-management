@@ -1,0 +1,171 @@
+﻿@attribute [Authorize]
+
+<CascadingAuthenticationState>
+    <div class="container-fluid">
+        <div class="row">
+
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <div class="col cursorStyle">
+                        <div class="card border-primary" @onclick="EmployeeClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-people text-primary"></i>
+                                <span class="flex-grow-1 text-center ">Employees</span>
+                                <span class="badge bg-primary fs-6"> @Employees.Count</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col cursorStyle">
+                        <div class="card border-success" @onclick="VacationClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-backpack3 text-success"></i>
+                                <span class="flex-grow-1 text-center ">Vacation</span>
+                                <span class="badge bg-success fs-6"> @Vacations.Count</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col cursorStyle">
+                        <div class="card border-danger" @onclick="OvertimeClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-stopwatch text-danger"></i>
+                                <span class="flex-grow-1 text-center ">Overtime</span>
+                                <span class="badge bg-danger fs-6"> @Overtimes.Count</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col cursorStyle">
+                        <div class="card border-info" @onclick="SanctionClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-x-octagon text-info"></i>
+                                <span class="flex-grow-1 text-center ">Sanctions</span>
+                                <span class="badge bg-info fs-6"> @Sanctions.Count</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col cursorStyle">
+                        <div class="card border-dark" @onclick="DepartmentClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-slack text-dark"></i>
+                                <span class="flex-grow-1 text-center ">Departments</span>
+                                <span class="badge bg-dark fs-6"> @Departments.Count</span>
+                            </div>
+                        </div>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+
+            <AuthorizeView Roles="Manage">
+                <Authorized>
+                    <div class="col cursorStyle">
+                        <div class="card border-primary" @onclick="EmployeeClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-people text-primary"></i>
+                                <span class="flex-grow-1 text-center ">Employees</span>
+                                <span class="badge bg-primary fs-6"> @Employees.Count</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col cursorStyle">
+                        <div class="card border-success" @onclick="VacationClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-backpack3 text-success"></i>
+                                <span class="flex-grow-1 text-center ">Vacation</span>
+                                <span class="badge bg-success fs-6"> @Vacations.Count</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col cursorStyle">
+                        <div class="card border-danger" @onclick="OvertimeClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-stopwatch text-danger"></i>
+                                <span class="flex-grow-1 text-center ">Overtime</span>
+                                <span class="badge bg-danger fs-6"> @Overtimes.Count</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col cursorStyle">
+                        <div class="card border-info" @onclick="SanctionClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-x-octagon text-info"></i>
+                                <span class="flex-grow-1 text-center ">Sanctions</span>
+                                <span class="badge bg-info fs-6"> @Sanctions.Count</span>
+                            </div>
+                        </div>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+
+            <AuthorizeView Roles="Staff">
+                <Authorized>
+                    <div class="col cursorStyle">
+                        <div class="card border-success" @onclick="ProfileClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-person-gear text-success"></i>
+                                <span class="flex-grow-1 text-center ">Profile</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col cursorStyle">
+                        <div class="card border-primary" @onclick="WorkProfileClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-person-lines-fill text-primary"></i>
+                                <span class="flex-grow-1 text-center ">Work Profile</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col cursorStyle">
+                        <div class="card border-danger" @onclick="PeerEvaluationClicked">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <i class="bi bi-journal-plus text-danger"></i>
+                                <span class="flex-grow-1 text-center ">Peer Evaluation</span>
+                            </div>
+                        </div>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+
+        </div>
+    </div>
+</CascadingAuthenticationState>
+
+<style>
+    .cursorStyle {
+        cursor: pointer;
+    }
+</style>
+
+@code {
+    public List<Employee> Employees { get; set; } = new();
+    public List<Department> Departments { get; set; } = new();
+    public List<Overtime> Overtimes { get; set; } = new();
+    public List<Sanction> Sanctions { get; set; } = new();
+    public List<Vacation> Vacations { get; set; } = new();
+    public List<Doctor> Health { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        allState.Action += StateHasChanged;
+        await LoadDefaults();
+    }
+
+    async Task LoadDefaults()
+    {
+        Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        Departments = await departmentService.GetAll(Constants.DepartmentBaseUrl);
+        Overtimes = await overtimeService.GetAll(Constants.OvertimeBaseUrl);
+        Sanctions = await sanctionService.GetAll(Constants.SanctionBaseUrl);
+        Vacations = await vacationService.GetAll(Constants.VacationBaseUrl);
+    }
+
+    void OvertimeClicked() => allState.OvertimeClicked();
+    void SanctionClicked() => allState.SanctionClicked();
+    void VacationClicked() => allState.VacationClicked();
+    void DepartmentClicked() => allState.DepartmentClicked();
+    void EmployeeClicked() => allState.EmployeeClicked();
+
+    void ProfileClicked() => allState.ProfileClicked();
+    void WorkProfileClicked() => allState.WorkProfileClicked();
+    void PeerEvaluationClicked() => allState.PeerEvaluationClicked();
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

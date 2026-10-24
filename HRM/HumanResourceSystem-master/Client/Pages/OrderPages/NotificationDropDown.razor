@@ -1,0 +1,156 @@
+﻿<div class="dropdown float-end notification-dropdown">
+    <a class="icon-dropdown dropdown-toggle" style="font-size: 1.5rem;" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-bell-fill"></i>
+        @if (@UnreadNotifications > 0)
+        {
+            <span class="notification-badge"> @UnreadNotifications </span>
+        }
+    </a>
+    <ul class="dropdown-menu notifications" role="menu" aria-labelledby="dLabel">
+        <div class="notification-heading" style="padding-left: 15px; padding-right: 15px;">
+            <h5 class="menu-title text-primary">Notifications
+                <i class="bi bi-arrow-clockwise text-primary float-end" style="cursor: pointer;" @onclick="GetNotifications"></i>
+            </h5>
+        </div>
+        <li><hr class="dropdown-divider"></li>
+        <div class="notifications-wrapper">
+            @foreach (Notification item in Notifications)
+            {
+                <div class="notification-item" style="@(item.IsRead ? "" : "background-color: lightcyan;") padding-left: 15px; padding-right: 15px;">
+                    <div class="item-header">
+                        <span class="item-type">
+                            @switch (item.Type)
+                            {
+                                case "Sanction":
+                                    <i class="bi bi-x-octagon text-primary"></i>
+                                    break;
+                                case "Overtime":
+                                    <i class="bi bi-stopwatch text-danger"></i>
+                                    break;
+                                case "Vacation":
+                                    <i class="bi bi-backpack3 text-success"></i>
+                                    break;
+                                case "Bonus":
+                                    <i class="bi bi-cash-coin text-warning"></i>
+                                    break;
+                                case "Employee Transfer":
+                                    <i class="bi bi-shuffle text-info"></i>
+                                    break;
+                            }&#160;
+                            @item.Type
+                        </span>
+                        <span class="item-time">@GetTimeAgo(item.CreatedAt)</span>
+                    </div>
+                    <p class="item-info">@item.Message</p>
+                    <hr class="dropdown-divider">
+                </div>
+            }
+            <div class="notification-item" style="padding-left: 15px; padding-right: 15px;">
+                <div class="item-header" style="display: flex; justify-content: center; align-items: center; font-weight: bold; color: gray;">
+                    <span>You're all caught up!</span>
+                </div>
+            </div>
+        </div>
+        <li><hr class="dropdown-divider"></li>
+        <div class="notification-footer" style="padding-left: 15px; padding-right: 15px;">
+            <h6 class="menu-title text-primary" style="cursor: pointer;" @onclick="MarkAsRead">
+                View all
+            </h6>
+        </div>
+    </ul>
+</div>
+
+<style>
+    .notification-dropdown .dropdown-toggle::after {
+        display: none;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -12px;
+        background-color: red;
+        color: white;
+        border-radius: 50%;
+        padding: 0px 6px;
+        font-size: 0.8rem;
+        border: 2px solid white;
+    }
+
+    .notifications-wrapper {
+        overflow: auto;
+        max-height: 250px;
+        width: 350px;
+    }
+
+    .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .item-type {
+        text-align: left;
+        font-weight: bold;
+    }
+
+    .item-time {
+        text-align: right;
+        color: gray;
+        font-size: 0.9rem;
+    }
+
+</style>
+
+@code
+{
+    public int CurrentEmployeeId { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+        try
+        {
+            var CurrentUserId = await customAuthStateProvider.GetCurrentUserId();
+            var CurrentUser = await accountService.GetUserById(int.Parse(CurrentUserId));
+            CurrentEmployeeId = CurrentUser.EmployeeId;
+            await GetNotifications();
+        }
+        catch
+        {
+            Console.WriteLine("Error");
+        }
+        allState.Action += StateHasChanged;
+    }
+
+    public List<Notification> Notifications { get; set; } = new List<Notification>();
+    public int UnreadNotifications { get; set; }
+    private async Task GetNotifications(){
+        Notifications = (await notificationService.GetByEmployeeId(CurrentEmployeeId, Constants.NotificationBaseUrl))
+                        .OrderByDescending(n => n.CreatedAt)
+                        .ToList();
+        UnreadNotifications = Notifications.Where(i => i.IsRead == false).Count();
+        StateHasChanged();
+    }
+
+    async void MarkAsRead(){ 
+        await notificationService.MarkAsRead(CurrentEmployeeId, Constants.NotificationBaseUrl);
+        await GetNotifications();
+        StateHasChanged();
+    }
+
+    public string GetTimeAgo(DateTime createdAt)
+    {
+        var timeSpan = DateTime.Now - createdAt;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "Just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes} minutes ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours} hours ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays} days ago";
+        return createdAt.ToString("MMM dd, yyyy");
+    }
+}

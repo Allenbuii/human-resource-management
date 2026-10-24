@@ -1,0 +1,118 @@
+﻿
+@if (IsVisible)
+{
+    <div class="card-body">
+        @{
+            var Tool = (new List<string>() { "Search", "ExcelExport", "PdfExport", "Print" });
+        }
+        <SfGrid DataSource="@MyBonuses" AllowPaging="true" AllowSorting="true" Toolbar=@Tool AllowExcelExport="true" @ref="DefaultGrid" AllowPdfExport="true">
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridEvents OnToolbarClick="ToolbarClickHanlder" TValue="BonusData"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(BonusData.EmployeeId) HeaderText="Employee ID"></GridColumn>
+                <GridColumn Field=@nameof(BonusData.Employee) HeaderText="Employee Name"></GridColumn>
+                <GridColumn Field=@nameof(BonusData.Name) HeaderText="Bonus Name"></GridColumn>
+                <GridColumn Field=@nameof(BonusData.BonusAmount) HeaderText="Bonus Amount"></GridColumn>
+                <GridColumn Field=@nameof(BonusData.BonusDate) HeaderText="Bonus Date"></GridColumn>
+                <GridColumn HeaderText="Action">
+                    <Template>
+                        @{
+                            var item = (context as BonusData);
+                            <div>
+                                <i class="bi bi-eye text-info" id="cursorStyle" @onclick="() => ShowClicked(item!.Bonus!)"></i>
+                            </div>
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+}
+
+<style>
+    .cursorStyle {
+        cursor: pointer
+    }
+</style>
+
+<BonusDialog @ref="bonusDialog"
+             Employee="CurrentEmployee"
+             Bonus="Bonus">
+</BonusDialog>
+
+@code {
+    private SfGrid<BonusData>? DefaultGrid;
+    public List<Bonus> MyBonusesData { get; set; } = new();
+
+    BonusDialog? bonusDialog;
+    Bonus Bonus = new();
+
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public Employee CurrentEmployee { get; set; } = new();
+
+    public class BonusData
+    {
+        public Bonus? Bonus { get; set; }
+        public int EmployeeId { get; set; }
+        public string? Employee { get; set; }
+        public string? Name { get; set; }
+        public string? BonusAmount { get; set; }
+        public string? BonusDate { get; set; }
+    }
+
+    public List<BonusData> MyBonuses { get; set; } = new List<BonusData>();
+
+    public async void OpenMyBonuses()
+    {
+        IsVisible = true;
+        await GetBonuses();
+        await GetBonusData();
+        StateHasChanged();
+    }
+
+    public void CloseMyBonuses()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task GetBonuses() => MyBonusesData = await bonusService.GetAllByEmployeeId(CurrentEmployee.Id, Constants.BonusBaseUrl);
+
+    private async Task GetBonusData()
+    {
+        MyBonuses = MyBonusesData
+        .Select(s => new BonusData
+            {
+                Bonus = s,
+                EmployeeId = CurrentEmployee.Id,
+                Employee = CurrentEmployee.Name,
+                Name = s.Name,
+                BonusAmount = s.BonusAmount.ToString("N0") + " VND",
+                BonusDate = s.BonusDate.ToString("MM/dd/yyyy")
+            })
+        .Reverse()
+        .ToList();
+    }
+
+    void OpenDialog() => bonusDialog?.OpenDialog();
+
+    // Show
+    private void ShowClicked(Bonus item)
+    {
+        Bonus = item;
+        bonusDialog?.ChangeTitle("View");
+        OpenDialog();
+    }
+
+    // Excel Export / PDF Export
+    public async Task ToolbarClickHanlder(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Text == "Excel Export")
+            await this.DefaultGrid!.ExcelExport()!;
+
+        if (args.Item.Text == "PDF Export")
+            await this.DefaultGrid!.PdfExport()!;
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

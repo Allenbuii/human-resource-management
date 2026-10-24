@@ -1,0 +1,152 @@
+﻿@using Syncfusion.Blazor.Charts
+
+@if (IsVisible)
+{
+    <div class="row">
+        <div class="col-lg-9 border-end" style="height: 100%">
+            <SfChart Title="Sanction Distribution" Width="100%">
+                <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                </ChartPrimaryXAxis>
+                <ChartPrimaryYAxis Title="Sanctions" Minimum="0" Interval="1">
+                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                </ChartPrimaryYAxis>
+                <ChartSeriesCollection>
+                    <ChartSeries DataSource="@SanctionChartData" Name="Total Sanctions" XName="MonthAbbreviation" YName="TotalSanctions" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                </ChartSeriesCollection>
+                <ChartTooltipSettings Header="<b>${point.tooltip}</b>" Enable="true" Opacity="1"></ChartTooltipSettings>
+                <ChartLegendSettings EnableHighlight="true"></ChartLegendSettings>
+            </SfChart>
+        </div>
+        <div class="col-lg-3" style="padding-left: 0 !important;">
+            <div class="card-header">
+                <h6 class="text-center">Monthly Analysis</h6>
+            </div>
+            <div class="card-body">
+                @if (SanctionChartData.Count > 1)
+                {
+                    var lastMonthData = SanctionChartData.Last();
+                    var previousMonthData = SanctionChartData[SanctionChartData.Count - 2];
+
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">Total Sanctions:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @if (lastMonthData.TotalSanctions - previousMonthData.TotalSanctions > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.TotalSanctions - previousMonthData.TotalSanctions < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.TotalSanctions, previousMonthData.TotalSanctions)
+                        </div>
+                    </div>               
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h6 class="mb-0">No data available for comparison</h6>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>    
+}
+
+@code {
+    public List<Sanction> Sanctions { get; set; } = new();
+    [Parameter] public bool IsVisible { get; set; } = false;
+
+    public async void OpenSanctionsStatistical()
+    {
+        IsVisible = true;
+        await LoadOvertimes();
+        CalculateMonthly();
+        StateHasChanged();
+    }
+
+    public void CloseSanctionsStatistical()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadOvertimes() => Sanctions = await sanctionService.GetAll(SupportConstants.SanctionBaseUrl);
+
+    private void CalculateMonthly()
+    {
+        var twelveMonths = Enumerable.Range(0, 12)
+            .Select(i => DateTime.Now.AddMonths(-i))
+            .Select(date => new DateTime(date.Year, date.Month, 1))
+            .ToList();
+
+        var startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-11);
+        var endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1).AddDays(-1);
+
+        var sanctionData = Sanctions
+            .Where(o => o.Date <= endDate && o.Date >= startDate)
+            .GroupBy(o => new DateTime(o.Date.Year, o.Date.Month, 1))
+            .Select(g => new SanctionData
+                {
+                    Month = g.Key, 
+                    TotalSanctions = g.Count(),
+                    MonthAbbreviation = g.Key.ToString("yyyy MMM") 
+                })
+            .ToList();
+
+        foreach (var month in twelveMonths)
+        {
+            if (!sanctionData.Any(d => d.Month.Year == month.Year && d.Month.Month == month.Month))
+            {
+                sanctionData.Add(new SanctionData
+                    {
+                        Month = month,
+                        TotalSanctions = 0,
+                        MonthAbbreviation = month.ToString("yyyy MMM")
+                    });
+            }
+        }
+
+        SanctionChartData = sanctionData.OrderBy(d => d.Month).ToList();
+    }
+
+    public class SanctionData
+    {
+        public DateTime Month { get; set; }
+        public int TotalSanctions { get; set; }
+        public string? MonthAbbreviation { get; set; }
+    }
+
+    public List<SanctionData> SanctionChartData { get; set; } = new List<SanctionData>();
+
+
+    private string CalculateChange(double currentScore, double previousScore)
+    {
+        double change = currentScore - previousScore;
+        string changeIndicator = (change == 0) ? "No Change" : "";
+
+        if (change == 0) return changeIndicator;
+
+        double percentageChange = previousScore != 0 ? (change / previousScore) * 100 : 0;
+
+        return $"{changeIndicator} {Math.Abs(change).ToString("N0")} ({Math.Abs(percentageChange):0.0}%)";
+    }
+
+    private string CalculateMonthly(double totalScore, double Score)
+    {
+        double percentageChange = (Score / totalScore) * 100;
+
+        return $"{Math.Abs(percentageChange):0.0}%";
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}
+

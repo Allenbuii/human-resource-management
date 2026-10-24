@@ -1,0 +1,171 @@
+﻿<SfDialog Width="750px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> Employee Certifications </Header>
+        <Content>
+            <EditForm Model="EmployeeDetails" Enhance>
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group mt-2">
+                            <label class="form-label">Id</label>
+                            <input @bind="EmployeeDetails.Id" class="form-control" disabled />
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Name</label>
+                            <input @bind="EmployeeDetails.Name" class="form-control" disabled />
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">List Certifications</label>
+                            <div class="table-wrapper">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">Name</th>
+                                            <th scope="col">Degree Date</th>
+                                            <th scope="col">Degree Institution</th>
+                                            <th scope="col">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{
+                                            int count = 1;
+                                            foreach (var item in SelectedDegrees)
+                                            {
+                                                if (item.DegreeDate < DateTime.Now || item.TrainingProgram!.EndDate < DateTime.Now)
+                                                {
+                                                    <tr>
+                                                        <th scope="row">@count</th>
+                                                        <td>@item.Name</td>                                                        
+                                                        <td>
+                                                            @{
+                                                                if (item.TrainingProgram == null) @item.DegreeDate.ToString("MM/dd/yyyy")
+                                                                else
+                                                                    @item.TrainingProgram.EndDate.ToString("MM/dd/yyyy")
+                                                            }                                                                
+                                                        </td>                                                        
+                                                        <td>@item.DegreeInstitution</td>                                                        
+                                                        <td>
+                                                            @{
+                                                                if (item.TrainingProgram == null)
+                                                                {
+                                                                    <i class="bi bi-pencil text-info" id="cursorStyle" @onclick="() => EditClicked(item)"></i>
+                                                                    <i class="bi bi-trash text-danger" id="cursorStyle" @onclick="() => DeleteClicked(item)"></i>
+                                                                }
+                                                            }
+                                                        </td>                                                        
+                                                    </tr>
+                                                    count++;
+                                                }                                                
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Close" IsPrimary="true" OnClick="CloseDialog" />
+    </DialogButtons>
+</SfDialog>
+
+<DegreeDialog @ref="degreeDialog"
+              Employee="EmployeeDetails"
+              Degree="Degree"
+              HandleSaveOperationEvent="UpdateDegreeEvent">
+</DegreeDialog>
+
+<style>
+    .table-wrapper {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .table thead {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        z-index: 1;
+    }
+
+    .table thead th {
+        background-color: white;
+    }
+</style>
+
+@code {
+    [Parameter] public Employee EmployeeDetails { get; set; } = new();
+
+    private bool IsVisible { get; set; } = false;
+
+    public List<Degree> SelectedDegrees { get; set; } = new();
+
+    private async Task GetDegrees() => SelectedDegrees = await degreeService.GetAllTrainingProgram(EmployeeDetails.Id ,Constants.DegreeBaseUrl);
+
+    // Update Degree clicked
+    DegreeDialog? degreeDialog;
+    Degree Degree = new();
+    private void EditClicked(Degree item)
+    {
+        degreeDialog.ChangeTitle("Update");
+        Degree = item;
+        degreeDialog!.OpenDialog();
+    }
+
+    // Update Degree Handler
+    async Task UpdateDegreeEvent(Degree item)
+    {
+        var (flag, message) = await degreeService.Update(item, Constants.DegreeBaseUrl);
+        var response = await DisplayMessage(flag, message);
+        if (response)
+        {
+            degreeDialog!.CloseDialog();
+            degreeDialog.ChangeTitle("Add");
+            await GetDegrees();
+            StateHasChanged();
+        }
+    }
+
+    //Delete
+    private async Task DeleteClicked(Degree item)
+    {
+        bool confrim = await dialogService.ConfirmAsync($"Are you sure you wanna delete {item.Name}?", "Confrim Delete");
+        if (!confrim) return;
+
+        var response = await degreeService.DeleteById(item.Id, Constants.DegreeBaseUrl);
+        var result = await DisplayMessage(response.Flag, response.Message);
+        if (result)
+        {
+            await GetDegrees();
+            StateHasChanged();
+        }
+    }
+
+    public async void OpenDialog()
+    {
+        SelectedDegrees = new();
+        IsVisible = true;
+        await GetDegrees();
+        StateHasChanged();
+    }
+
+    public void CloseDialog() => IsVisible = false;
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+}

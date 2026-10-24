@@ -1,0 +1,197 @@
+﻿@implements IDisposable
+
+@if (allState.ShowRecruitment)
+{
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="float-start">Recruitment</h4>
+                        <button class="btn btn-outline-success float-end" @onclick="AddButtonClicked"><i class="bi bi-plus-circle-dotted"> </i> Add Recruitment </button>
+                    </div>
+                    <div class="card-header" style="max-height:580px; overflow-x:hidden; overflow-y:scroll;">
+                        <div class="card-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Id</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Job Name</th>
+                                        <th scope="col">Total Positions</th>
+                                        <th scope="col">Recruiting Unit</th>
+                                        <th scope="col">Posting Date</th>
+                                        <th scope="col">Closing Date</th>
+                                        <th scope="col">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Recruitments is not null)
+                                    {
+                                        int count = 1;
+                                        foreach (var item in Recruitments)
+                                        {
+                                            <tr>
+                                                <th scope="row">@count</th>
+                                                <td>@item.Id</td>
+                                                <td>@item.Name</td>
+                                                <td>@item.JobName</td>
+                                                <td>@item.TotalPositions</td>
+                                                <td>@item.Branch?.Name</td>
+                                                <td>@item.PostingDate.ToString("MM/dd/yyyy")</td>
+                                                <td>@item.ClosingDate.ToString("MM/dd/yyyy")</td>
+                                                <td>
+                                                    @if (item.ClosingDate > DateTime.Now)
+                                                    {
+                                                        <i class="bi bi-pencil text-primary" id="cursorStyle" @onclick="() => EditClicked(item)"></i>
+                                                        <span> </span>
+                                                        <i class="bi bi-trash text-danger" id="cursorStyle" @onclick="() => DeleteClicked(item)"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-eye text-info" id="cursorStyle" @onclick="() => ShowClicked(item)"></i>
+                                                    }
+                                                </td>
+                                            </tr>
+                                            count++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="4"><div class="alert alert-info text-center">No User registered yet!</div></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .cursorStyle {
+        cursor: pointer
+    }
+</style>
+
+<RecruitmentDialog @ref="recruitmentDialog"
+                   HandleSaveOperationEvent="HandleSaveOperationEvent"
+                   Recruitment="Recruitment"
+                   Branches="Branches" />
+
+@code {
+    public string Title { get; set; } = "Add";
+    RecruitmentDialog? recruitmentDialog;
+    Recruitment Recruitment = new();
+    public List<Branch> Branches { get; set; } = new();
+    public List<Recruitment> Recruitments { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        allState.Action += StateHasChanged;
+        allState.RecruitmentAction += LoadDefaults;
+    }
+
+    private async void LoadDefaults()
+    {
+        await GetRecruitments();
+        await GetBranches();
+        StateHasChanged();
+    }
+
+    private async Task GetRecruitments()
+    {
+        Recruitments = await recruitmentService.GetAll(Constants.RecruitmentBaseUrl);
+    }
+
+    private async Task GetBranches()
+    {
+        Branches = await branchService.GetAll(Constants.BranchBaseUrl);
+    }
+
+    void AddButtonClicked()
+    {
+        recruitmentDialog?.ChangeTitle("Add");
+        Recruitment = new();
+        OpenDialog();
+    }
+
+    void OpenDialog()
+    {
+        recruitmentDialog?.OpenDialog();
+    }
+
+    //Add or Update
+    private async Task HandleSaveOperationEvent()
+    {
+        bool successCheck = false;
+        if (Recruitment.Id > 0)
+        {
+            var result = await recruitmentService.Update(Recruitment, Constants.RecruitmentBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        else
+        {
+            var result = await recruitmentService.Insert(Recruitment, Constants.RecruitmentBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        if (successCheck)
+        {
+            Recruitment = new();
+            await GetRecruitments();
+            recruitmentDialog?.ChangeTitle("Add");
+            recruitmentDialog?.CloseDialog();
+        }
+    }
+
+    // Edit
+    private void EditClicked(Recruitment recruitment)
+    {
+        recruitmentDialog?.ChangeTitle("Update");
+        Recruitment = recruitment;
+        OpenDialog();
+    }
+
+    //Delete
+    private async Task DeleteClicked(Recruitment recruitment)
+    {
+        bool confrim = await dialogService.ConfirmAsync($"Are you sure you wanna delete {recruitment.Name}?", "Confrim Delete");
+        if (!confrim) return;
+
+        var response = await recruitmentService.DeleteById(recruitment.Id, Constants.RecruitmentBaseUrl);
+        var result = await DisplayMessage(response.Flag, response.Message);
+        if (result) await GetBranches();
+    }
+
+    // Show
+    private void ShowClicked(Recruitment item)
+    {
+        Recruitment = item;
+        recruitmentDialog?.ChangeTitle("View");
+        OpenDialog();
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+
+    public void Dispose()
+    {
+        allState.Action -= StateHasChanged;
+    }
+}

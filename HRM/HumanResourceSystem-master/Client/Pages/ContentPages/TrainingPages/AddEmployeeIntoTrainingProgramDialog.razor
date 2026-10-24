@@ -1,0 +1,226 @@
+﻿<SfDialog Width="1000px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header>
+            <div>@Title Employee</div>
+        </Header>
+        <Content>
+            <div class="card border-success">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Id</label>
+                        <input @bind="TrainingProgram.Id" class="form-control" disabled />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Name</label>
+                        <InputText @bind-Value="TrainingProgram.Name" class="form-control" disabled />
+                    </div>
+                    <div class="form-group mt-2">
+                        @{
+                            var Tool = (new List<string>() { "Search" });
+                        }
+                        <SfGrid DataSource="@EmployeesData" AllowPaging="true" Toolbar=@Tool AllowSorting="true" @ref="DefaultGrid">
+                            <GridPageSettings PageSize="5"></GridPageSettings>
+                            <GridColumns>
+                                @if (!isView)
+                                {
+                                    <GridColumn Width="45" HeaderText="@DegreeCount.ToString()" HeaderTextAlign="TextAlign.Center">
+                                        <Template>
+                                            @{
+                                                var item = (context as EmployeeData);
+
+                                                bool isDisabled = Degrees.Any(d => d.EmployeeId == item!.EmployeeId);
+
+                                                if (AddedEmployees.Contains(item!.Employee!)) isDisabled = false;
+
+                                                <div class="d-flex justify-content-center">
+                                                    <input type="checkbox" @onchange="(e) => OnCheckboxChanged(e, item!.Employee!)" disabled="@isDisabled" />
+                                                </div>
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                }
+                                <GridColumn Field=@nameof(EmployeeData.EmployeeId) HeaderText="ID" Width="50px"></GridColumn>
+                                <GridColumn Field=@nameof(EmployeeData.Name) HeaderText="Name"></GridColumn>
+                                <GridColumn Field=@nameof(EmployeeData.GeneralDepartment) HeaderText="General Department"></GridColumn>
+                                <GridColumn Field=@nameof(EmployeeData.Department) HeaderText="Department"></GridColumn>
+                                <GridColumn Field=@nameof(EmployeeData.Branch) HeaderText="Branch"></GridColumn>
+                                @if (!isView)
+                                {
+                                    <GridColumn HeaderText="Action">
+                                        <Template>
+                                            @{
+                                                var item = (context as EmployeeData);
+
+                                                bool isDisabled = Degrees.Any(d => d.EmployeeId == item!.EmployeeId);
+
+                                                if (isDisabled)
+                                                {
+                                                    <div>
+                                                        <i class="bi bi-trash text-danger" id="cursorStyle" @onclick="() => DeleteClicked(item!.Employee!)"></i>
+                                                    </div>
+                                                }
+                                            }
+                                        </Template>
+                                    </GridColumn>
+                                }
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+
+                </div>
+            </div>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        @if (!isView)
+        {
+            <DialogButton Content="SAVE" Type="ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+        }
+        else
+        {
+            <DialogButton Content="CLOSE" IsPrimary="true" OnClick="Close" />
+        }
+    </DialogButtons>
+</SfDialog>
+
+<style>
+    .table-wrapper {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .table thead {
+        position: sticky;
+        top: 0;
+        background-color: white; /* Màu nền của thead để tránh che khuất nội dung khi cuộn */
+        z-index: 1; /* Đảm bảo thead luôn ở trên các dòng tbody */
+    }
+
+        .table thead th {
+            background-color: white; /* Màu nền của các tiêu đề cột */
+        }
+</style>
+
+@code {
+    private SfGrid<EmployeeData>? DefaultGrid;
+
+    [Parameter] public TrainingProgram TrainingProgram { get; set; } = new();
+    [Parameter] public List<Degree> Degrees { get; set; } = new();
+    [Parameter] public EventCallback<List<Employee>> HandleSaveAEITP { get; set; }
+
+    private bool IsVisible { get; set; } = false;
+    private bool IsDelete { get; set; } = false;
+
+    public string Title { get; set; } = "Add";
+    private bool isView => Title == "View";
+
+    public List<Employee> Employees { get; set; } = new();
+
+    public List<Employee> AddedEmployees { get; set; } = new();
+
+    private int DegreeCount { get; set; } = 0;
+
+    public async void OpenDialog()
+    {
+        Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        IsVisible = true;
+
+        await LoadDegrees();
+        DegreeCount = Degrees.Count();
+
+        await GetEmployeeData();
+        StateHasChanged();
+    }
+
+    private async Task LoadDegrees() => Degrees = await degreeService.GetAllEmployee(TrainingProgram.Id, Constants.DegreeBaseUrl);
+
+    //Delete
+    private async Task DeleteClicked(Employee employee)
+    {
+        bool confrim = await dialogService.ConfirmAsync($"Are you sure you wanna remove {employee.Name}?", "Confrim Delete");
+        if (!confrim) return;
+
+        var deleteDegree = Degrees.SingleOrDefault(d => d.EmployeeId == employee.Id);
+
+        var response = await degreeService.DeleteById(deleteDegree!.Id, Constants.DegreeBaseUrl);
+        var result = await DisplayMessage(response.Flag, response.Message);
+        if (result)
+        {
+            await LoadDegrees();
+            StateHasChanged();
+        }
+    }
+
+    private async void Save()
+    {
+        if (AddedEmployees.Count == 0)
+            await dialogService.AlertAsync("You need to choose employee.", "Alert!");
+        else
+        {
+            await HandleSaveAEITP.InvokeAsync(AddedEmployees);
+            IsVisible = false;
+        }
+    }
+
+    private void Close() => IsVisible = false;
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+
+    private void OnCheckboxChanged(ChangeEventArgs e, Employee employee)
+    {
+        bool isChecked = (bool)e.Value;
+        if (isChecked)
+        {
+            AddedEmployees.Add(employee);
+            DegreeCount++;
+        }
+        else
+        {
+            AddedEmployees.Remove(employee);
+            DegreeCount--;
+        }
+    }
+
+    public class EmployeeData
+    {
+        public Employee? Employee { get; set; }
+        public int EmployeeId { get; set; }
+        public string? Name { get; set; }
+        public string? GeneralDepartment { get; set; }
+        public string? Department { get; set; }
+        public string? Branch { get; set; }
+    }
+
+    public List<EmployeeData> EmployeesData { get; set; } = new List<EmployeeData>();
+
+    private async Task GetEmployeeData()
+    {
+        EmployeesData = Employees
+        .Where(e => Degrees.Any(d => d.EmployeeId == e!.Id) || !isView)
+        .Select(s => new EmployeeData
+            {
+                Employee = s,
+                EmployeeId = s.Id,
+                Name = s.Name,
+                GeneralDepartment = s.Branch!.Department!.GeneralDepartment!.Name,
+                Department = s.Branch!.Department!.Name,
+                Branch = s.Branch!.Name
+            })
+        .ToList();
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+}

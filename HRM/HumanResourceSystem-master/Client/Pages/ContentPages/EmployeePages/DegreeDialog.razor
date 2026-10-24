@@ -1,0 +1,95 @@
+﻿<SfDialog Width="400px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> @Title Degree </Header>
+        <Content>
+            <EditForm Model="Degree" Enhance OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Employee Id</label>
+                            <InputNumber @bind-Value="Employee.Id" class="form-control" disabled></InputNumber>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Employee Name</label>
+                            <InputText @bind-Value="Employee.Name" class="form-control" disabled></InputText>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Degree Name</label>
+                            <InputText @bind-Value="Degree.Name" class="form-control" disabled="@isDisabled"></InputText>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Degree Date</label>
+                            <InputDate @bind-Value="Degree.DegreeDate" class="form-control" disabled="@isDisabled"></InputDate>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Degree Institution</label>
+                            <InputText @bind-Value="Degree.DegreeInstitution" class="form-control" disabled="@isDisabled"></InputText>
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Description</label>
+                            <InputTextArea @bind-Value="Degree.Description" class="form-control" rows="5" disabled="@isDisabled"></InputTextArea>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        @if (Title == "View")
+        {
+            <DialogButton Content="CLOSE" IsPrimary="true" OnClick="CloseDialog" />
+        }
+        else
+        {
+            <DialogButton Content="Save" IsPrimary="true" OnClick="Save" />
+        }
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    [Parameter] public Employee Employee { get; set; } = new();
+    [Parameter] public EventCallback<Degree> HandleSaveOperationEvent { get; set; }
+
+    [Parameter] public Degree Degree { get; set; } = new();
+
+    private bool IsVisible { get; set; } = false;
+
+    public string Title { get; set; } = "Add";
+    private bool isDisabled => Title == "View";
+
+    private async void Save()
+    {
+        if (Degree.DegreeDate == DateTime.MinValue)
+            await dialogService.AlertAsync("You need to provide degree date.", "Alert!");
+        else
+        if (string.IsNullOrEmpty(Degree.Name))
+            await dialogService.AlertAsync("You need to provide degree name.", "Alert!");
+        else
+        if (string.IsNullOrEmpty(Degree.DegreeInstitution))
+            await dialogService.AlertAsync("You need to provide institution.", "Alert!");
+        else
+        if (string.IsNullOrEmpty(Degree.Description))
+            await dialogService.AlertAsync("You need to provide description.", "Alert!");
+        else
+            await HandleSaveOperationEvent.InvokeAsync(Degree);
+    }
+
+    public void OpenDialog()
+    {
+        Degree.EmployeeId = Employee.Id;
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title)
+    {
+        Title = title;
+    }
+}

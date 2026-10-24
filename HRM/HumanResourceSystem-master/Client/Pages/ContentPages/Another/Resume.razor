@@ -1,0 +1,170 @@
+﻿<SfDialog Width="700px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible" class="employee-resume">
+    <DialogEvents OnOpen="Open"> </DialogEvents>
+    <DialogTemplates>
+        <Header> Resume @CurrentEmployee.Name </Header>
+        <Content>
+            <EditForm Model="CurrentEmployee">
+                <form id="printable-form">
+                    <div class="form-group">
+                        <div class="full-name">
+                            <img src="@CurrentEmployee.Photo" alt="Admin" class="rounded-circle" width="150px">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="section__title">Personal Information</div>
+                        <table>
+                            <tr>
+                                <td class="label name">Name:</td>
+                                <td class="value">@CurrentEmployee.Name</td>
+                            </tr>
+                            <tr>
+                                <td class="label name">Date of birth:</td>
+                                <td class="value">@CurrentEmployee.DateOfBirth.ToString("MM/dd/yyyy")</td>
+                            </tr>
+                            <tr>
+                                <td class="label name">Phone number:</td>
+                                <td class="value">@CurrentEmployee.TelephoneNumber</td>
+                            </tr>
+                            <tr>
+                                <td class="label name">Email address:</td>
+                                <td class="value">@CurrentEmployee.Email</td>
+                            </tr>
+                            <tr>
+                                <td class="label name">Address:</td>
+                                <td class="value">@CurrentEmployee.Address</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="form-group">
+                        <div class="section__title">Position and Department</div>
+                        <table>
+                            <tr>
+                                <td class="label name" style="width:30%">General department:</td>
+                                <td class="value">@GeneralDepartment.Name</td>
+                            </tr>
+                            <tr>
+                                <td class="label name">Department:</td>
+                                <td class="value">@Department.Name</td>
+                            </tr>
+                            <tr>
+                                <td class="label name">Branch:</td>
+                                <td class="value">@Branch.Name</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="form-group">
+                        <div class="section__title">Employment Details</div>
+                        <table>
+                            <tr>
+                                <td class="label name">Employee ID:</td>
+                                <td class="value">@CurrentEmployee.Id</td>
+                            </tr>
+                            <tr>
+                                <td class="label name">Current position:</td>
+                                <td class="value">@CurrentEmployee.JobName</td>
+                            </tr>
+                            <tr>
+                                <td class="label name">Supervisor:</td>
+                                <td class="value">@Branch.SupervisorName</td>
+                            </tr>
+                        </table>
+
+                    </div>
+                    <div class="form-group">
+                        <div class="section__title">Degrees</div>
+                        <table class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Degree Date</th>
+                                    <th scope="col">Degree Institution</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    foreach (var item in Degrees)
+                                    {
+                                        if (item.DegreeDate < DateTime.Now || item.TrainingProgram!.EndDate < DateTime.Now)
+                                        {
+                                            <tr>
+                                                <td>@item.Name</td>
+                                                <td>
+                                                    @{
+                                                        if (item.TrainingProgram == null)
+                                                            @item.DegreeDate.ToString("MM/dd/yyyy")
+                                                        else
+                                                            @item.TrainingProgram.EndDate.ToString("MM/dd/yyyy")
+                                                    }
+                                                </td>
+                                                <td>@item.DegreeInstitution</td>
+                                            </tr>
+                                        }
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="PRINT" Type="ButtonType.Submit" IsPrimary="true" OnClick="@(_ => PrintingService.Print("printable-form", PrintType.Html))" />
+    </DialogButtons>
+</SfDialog>
+
+
+<style>
+    .employee-resume table {
+        width: 100% !important;
+    }
+
+    .eemployee-resume td {
+        padding: 8px !important;
+    }
+
+    .employee-resume .label {
+        width: 200px !important;
+    }
+
+    .employee-resume .section__title {
+        color: #54AFE4 !important;
+        font-weight: bold !important;
+        margin-bottom: 5px !important;
+        margin-top: 5px !important;
+        text-transform: uppercase !important;
+    }
+
+    .employee-resume .name {
+        font-weight: bold !important;
+    }
+</style>
+
+
+@code {
+    [Parameter] public Employee CurrentEmployee { get; set; } = new();
+
+    public GeneralDepartment GeneralDepartment { get; set; } = new();
+    public Department Department { get; set; } = new();
+    public Branch Branch { get; set; } = new();
+
+    public List<Degree> Degrees { get; set; } = new();
+
+    private bool IsVisible { get; set; } = false;
+
+    private async Task GetDegrees() => Degrees = await degreeService.GetAllTrainingProgram(CurrentEmployee.Id, Constants.DegreeBaseUrl);
+
+    public async void Open()
+    {
+
+        await GetDegrees();
+
+        GeneralDepartment = CurrentEmployee.Branch!.Department!.GeneralDepartment!;
+        Department = CurrentEmployee.Branch!.Department!;
+        Branch = CurrentEmployee.Branch!;
+
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+}

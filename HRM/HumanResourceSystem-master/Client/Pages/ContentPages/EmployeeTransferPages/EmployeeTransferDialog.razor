@@ -1,0 +1,198 @@
+﻿<SfDialog Width="1000px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> 
+            @Title Employee Transfer
+        </Header>
+        <Content>
+            <div class="card border-success">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Branch Id</label>
+                        <input @bind="Branch.Id" class="form-control" disabled />
+                    </div>                                    
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="form-group mt-2">
+                                <label class="form-label">Branch Name</label>
+                                <InputText @bind-Value="Branch.Name" class="form-control" disabled />
+                            </div>
+                            <div class="form-group mt-2">
+                                <label class="form-label">Employee Transfer Name</label>
+                                <InputText @bind-Value="EmployeeTransfer.Name" class="form-control" disabled="@isDisabled" />
+                            </div>
+                            <div class="form-group mt-2">
+                                <label class="form-label">New Position</label>
+                                <InputText @bind-Value="EmployeeTransfer.NewPosition" class="form-control" disabled="@isDisabled" />
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="form-group mt-2">
+                                <label class="form-label">Request Date</label>
+                                <InputDate @bind-Value="EmployeeTransfer.RequestDate" class="form-control" disabled="@isDisabled" />
+                            </div>
+                            <div class="form-group mt-2">
+                                <label class="form-label">Reason</label>
+                                <InputTextArea @bind-Value="EmployeeTransfer.Reason" class="form-control" rows="4" disabled="@isDisabled" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group mt-2">
+                        @{
+                            var Tool = (new List<string>() { "Search" });
+                        }
+                        <SfGrid DataSource="@Employees" AllowPaging="true" Toolbar=@Tool AllowSorting="true" @ref="DefaultGrid">
+                            <GridPageSettings PageSize="8"></GridPageSettings>
+                            <GridColumns>
+                                @if (!isDisabled)
+                                {
+                                    <GridColumn Width="45" HeaderText="@TransferCount.ToString()" HeaderTextAlign="TextAlign.Center">
+                                        <Template>
+                                        @{
+                                            var item = (context as EmployeeData);
+
+                                            var selectedCountFromBranch = AddedEmployees.Count(e => e!.Branch!.Id == item!.Employee!.Branch!.Id);
+                                            var selectedCountFromEmployeeTransfers = EmployeeTransfers.Count(et => et!.Employee!.Branch!.Id == item!.Employee!.Branch!.Id);
+
+                                            var availableToTransfer = item!.Employee!.Branch!.CurrentEmployees - item!.Employee!.Branch!.RequiredEmployees - selectedCountFromEmployeeTransfers;
+
+                                            bool isInTransferList = EmployeeTransfers.Any(et => et!.Employee!.Id == item!.Employee.Id);
+
+                                            bool isDisabled = availableToTransfer <= 0 || isInTransferList || selectedCountFromBranch >= availableToTransfer || AddedEmployees.Count() + Branch.CurrentEmployeeTransfers == Branch.RequiredEmployees - Branch.CurrentEmployees;
+
+                                            if (AddedEmployees.Contains(item!.Employee)) isDisabled = false;
+
+                                            <div class="d-flex justify-content-center">
+                                                <input type="checkbox" @onchange="(e) => OnCheckboxChanged(e, item!.Employee)" disabled="@isDisabled" />
+                                            </div>
+                                        }
+                                        </Template>
+                                    </GridColumn>
+                                }                                
+                                <GridColumn Field=@nameof(EmployeeData.EmployeeId) HeaderText="ID" Width="50px"></GridColumn>
+                                <GridColumn Field=@nameof(EmployeeData.Name) HeaderText="Name"></GridColumn>
+                                <GridColumn Field=@nameof(EmployeeData.GeneralDepartment) HeaderText="General Department"></GridColumn> 
+                                <GridColumn Field=@nameof(EmployeeData.Department) HeaderText="Department"></GridColumn>
+                                <GridColumn Field=@nameof(EmployeeData.Branch) HeaderText="Branch"></GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        @if (Title == "View")
+        {
+            <DialogButton Content="CLOSE" IsPrimary="true" OnClick="CloseDialog" />
+        }
+        else
+        {
+            <DialogButton Content="Save" IsPrimary="true" OnClick="Save" />
+        }
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    private SfGrid<EmployeeData>? DefaultGrid;
+
+    [Parameter] public Branch Branch { get; set; } = new();
+    [Parameter] public List<Employee> EmployeesData { get; set; } = new();
+    [Parameter] public EmployeeTransfer EmployeeTransfer { get; set; } = new();
+    [Parameter] public List<EmployeeTransfer> EmployeeTransfers { get; set; } = new();
+    [Parameter] public EventCallback<List<Employee>> HandleSaveOperationEvent { get; set; }
+
+    public string Title { get; set; } = "Add";
+    private bool IsVisible { get; set; } = false;
+
+    private bool isDisabled => Title == "View";
+
+    private int TransferCount { get; set; } = 0;
+
+    public List<Employee> AddedEmployees { get; set; } = new();
+
+    public class EmployeeData
+    {
+        public Employee? Employee { get; set; }
+        public int EmployeeId { get; set; }
+        public string? Name { get; set; }
+        public string? GeneralDepartment { get; set; }
+        public string? Department { get; set; }
+        public string? Branch { get; set; }
+    }
+
+    public List<EmployeeData> Employees { get; set; } = new List<EmployeeData>();
+
+    private async Task GetEmployeeData()
+    {
+        Employees = EmployeesData
+        .Select(s => new EmployeeData
+            {
+                Employee = s,
+                EmployeeId = s.Id,
+                Name = s.Name,
+                GeneralDepartment = s.Branch!.Department!.GeneralDepartment!.Name,
+                Department = s.Branch!.Department!.Name,
+                Branch = s.Branch!.Name
+            })
+        .ToList();
+    }
+
+    public async void OpenDialog()
+    {
+        IsVisible = true;
+        await GetEmployeeData();
+        AddedEmployees = new();
+        TransferCount = Branch.CurrentEmployeeTransfers;
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private void OnCheckboxChanged(ChangeEventArgs e, Employee employee)
+    {
+        bool isChecked = (bool)e.Value;
+        if (isChecked)
+        {
+            AddedEmployees.Add(employee);
+            TransferCount++;
+        }        
+        else
+        {
+            AddedEmployees.Remove(employee);
+            TransferCount--;
+        }
+    }
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(EmployeeTransfer.Name))
+            await dialogService.AlertAsync("You need to provide name.", "Alert!");
+        else
+        if (string.IsNullOrEmpty(EmployeeTransfer.NewPosition))
+            await dialogService.AlertAsync("You need to provide new position.", "Alert!");
+        else
+        if (EmployeeTransfer.RequestDate == DateTime.MinValue)
+            await dialogService.AlertAsync("You need to provide request date.", "Alert!");
+        else
+        if (string.IsNullOrEmpty(EmployeeTransfer.Reason))
+            await dialogService.AlertAsync("You need to provide reason.", "Alert!");
+        else
+        if (AddedEmployees.Count == 0)
+            await dialogService.AlertAsync("You need to choose employee.", "Alert!");
+        else
+        {
+            EmployeeTransfer.BranchId = Branch.Id;
+            EmployeeTransfer.Branch = Branch;
+            await HandleSaveOperationEvent.InvokeAsync(AddedEmployees);
+            IsVisible = false;
+        }
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+
+}

@@ -1,0 +1,149 @@
+﻿
+@if (IsVisible)
+{
+    <div class="card-body">
+        @{
+            var Tool = (new List<string>() { "Search", "ExcelExport", "PdfExport", "Print" });
+        }
+        <SfGrid DataSource="@MyTrainingPrograms" AllowPaging="true" AllowSorting="true" Toolbar=@Tool AllowExcelExport="true" @ref="DefaultGrid" AllowPdfExport="true">
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridEvents OnToolbarClick="ToolbarClickHanlder" TValue="TrainingProgramData"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(TrainingProgramData.EmployeeId) HeaderText="Employee ID" Width="110px"></GridColumn>
+                <GridColumn Field=@nameof(TrainingProgramData.Employee) HeaderText="Employee Name"></GridColumn>
+                <GridColumn Field=@nameof(TrainingProgramData.Name) HeaderText="Training Program Name" Width="400px"></GridColumn>
+                <GridColumn Field=@nameof(TrainingProgramData.StartDate) HeaderText="Start Date"></GridColumn>
+                <GridColumn Field=@nameof(TrainingProgramData.EndDate) HeaderText="End Date"></GridColumn>
+                <GridColumn Field=@nameof(TrainingProgramData.TrainingDay) HeaderText="Training Day"></GridColumn>
+                <GridColumn Field=@nameof(TrainingProgramData.Instructor) HeaderText="Instructor"></GridColumn>
+                <GridColumn HeaderText="Action" Width="70px">
+                    <Template>
+                        @{
+                            var item = (context as TrainingProgramData);
+                            <div>
+                                <i class="bi bi-eye text-info" id="cursorStyle" @onclick="() => ShowClicked(item!.TrainingProgram!)"></i>
+                            </div>
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>
+}
+
+<style>
+    .cursorStyle {
+        cursor: pointer
+    }
+</style>
+
+<TrainingProgramDialog @ref="trainingProgramDialog"
+                       TrainingProgram="TrainingProgram"
+                       Instructors="Instructors" />
+
+@code {
+    private SfGrid<TrainingProgramData>? DefaultGrid;
+    public List<Degree> Degrees { get; set; } = new();
+    public List<TrainingProgram> MyTrainingProgramsData { get; set; } = new();
+
+    TrainingProgramDialog? trainingProgramDialog;
+    TrainingProgram TrainingProgram = new();
+    public List<Instructor> Instructors { get; set; } = new();
+
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public Employee CurrentEmployee { get; set; } = new();
+
+    public class TrainingProgramData
+    {
+        public TrainingProgram? TrainingProgram { get; set; }
+        public int EmployeeId { get; set; }
+        public string? Employee { get; set; }
+        public string? Name { get; set; }
+        public string? StartDate { get; set; }
+        public string? EndDate { get; set; }
+        public DayOfWeek? TrainingDay { get; set; }
+        public string? Instructor { get; set; }
+    }
+
+    public List<TrainingProgramData> MyTrainingPrograms { get; set; } = new List<TrainingProgramData>();
+
+    public async Task OpenMyTrainingPrograms()
+    {
+        IsVisible = true;
+        await GetDegrees();
+        await GetTrainingProgramData();
+        await GetInstructors();
+        StateHasChanged();
+    }
+
+    public void CloseMyTrainingPrograms()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    /*protected override async Task OnInitializedAsync()
+    {
+        allState.Action += StateHasChanged;
+        allState.WorkProfileAction += LoadDefaults;
+    }
+
+    private async void LoadDefaults()
+    {
+        await GetDegrees();
+        await GetTrainingProgramData();
+        StateHasChanged();
+    }*/
+
+    private async Task GetInstructors() => Instructors = await instructorService.GetAll(Constants.InstructorBaseUrl);
+
+    private async Task GetDegrees(){
+        Degrees = await degreeService.GetAllTrainingProgram(CurrentEmployee.Id, Constants.DegreeBaseUrl);        
+        MyTrainingProgramsData.Clear();
+        foreach (var degree in Degrees.Where(d => d.TrainingProgram != null))
+        {
+            MyTrainingProgramsData.Add(degree.TrainingProgram!);
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task GetTrainingProgramData()
+    {
+        MyTrainingPrograms = MyTrainingProgramsData
+        .Select(s => new TrainingProgramData
+            {
+                TrainingProgram = s,
+                EmployeeId = CurrentEmployee.Id,
+                Employee = CurrentEmployee.Name,
+                Name = s.Name,
+                StartDate = s.StartDate.ToString("MM/dd/yyyy"),
+                EndDate = s.EndDate.ToString("MM/dd/yyyy"),
+                TrainingDay = s.TrainingDay,
+                Instructor = s.Instructor!.Name!
+            })
+        .Reverse()
+        .ToList();
+    }
+
+    void OpenDialog() => trainingProgramDialog?.OpenDialog();
+
+    // Show
+    private void ShowClicked(TrainingProgram item)
+    {
+        TrainingProgram = item;
+        trainingProgramDialog?.ChangeTitle("View");
+        OpenDialog();
+    }
+
+    // Excel Export / PDF Export
+    public async Task ToolbarClickHanlder(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Text == "Excel Export")
+            await this.DefaultGrid!.ExcelExport()!;
+
+        if (args.Item.Text == "PDF Export")
+            await this.DefaultGrid!.PdfExport()!;
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

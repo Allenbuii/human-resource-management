@@ -1,0 +1,572 @@
+﻿@implements IDisposable
+
+@if (allState.ShowProfile)
+{
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card mb-2">
+                    <div class="card-header">
+                        <h4 class="float-start">My Profile</h4>
+                        <button class="btn btn-outline-danger float-end ms-1" @onclick="OpenChangePasswordDialog"><i class="bi bi-exclamation-circle"> </i> Change Password </button>
+                        <button class="btn btn-outline-primary float-end" @onclick="Resume"><i class="bi bi-file-person"> </i> Resume </button>
+                    </div>
+                </div>
+                <div class="row gutters-sm g-2">
+                    <div class="col-md-4 mb-2">
+                        <div class="card mb-2">
+                            <div class="card-header">
+                                <h6 class="text-center">Avatar</h6>
+                            </div>
+                            <div class="card-body" style=" min-height: 281px">
+                                <div class="d-flex flex-column align-items-center text-center">
+                                    <img src="@CurrentEmployee.Photo" alt="Admin" class="rounded-circle" width="281">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row gutters-sm">
+                            <div class="mb-2">
+                                <div class="card h-100">
+                                    <div class="card-header">
+                                        <h6 class="text-center">Skills Score</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                Technical:
+                                            </div>
+                                            <div class="col-sm-6 text-end">
+                                                @if (AverageEvaluation[0] <= 10)
+                                                {
+                                                    @AverageEvaluation[0]
+                                                }
+                                                else
+                                                {
+                                                    <div>Not evaluated</div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 5px">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: @(AverageEvaluation[0] * 10)%" aria-valuenow="@(AverageEvaluation[0] * 10)" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                Communication:
+                                            </div>
+                                            <div class="col-sm-6 text-end">
+                                                @if (AverageEvaluation[1] <= 10)
+                                                {
+                                                    @AverageEvaluation[1]
+                                                }
+                                                else
+                                                {
+                                                    <div>Not evaluated</div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 5px">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: @(AverageEvaluation[1] * 10)%" aria-valuenow="@(AverageEvaluation[1] * 10)" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                Teamwork:
+                                            </div>
+                                            <div class="col-sm-6 text-end">
+                                                @if (AverageEvaluation[2] <= 10)
+                                                {
+                                                    @AverageEvaluation[2]
+                                                }
+                                                else
+                                                {
+                                                    <div>Not evaluated</div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 5px">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: @(AverageEvaluation[2] * 10)%" aria-valuenow="@(AverageEvaluation[2] * 10)" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                Problem Solving:
+                                            </div>
+                                            <div class="col-sm-6 text-end">
+                                                @if (AverageEvaluation[3] <= 10)
+                                                {
+                                                    @AverageEvaluation[3]
+                                                }
+                                                else
+                                                {
+                                                    <div>Not evaluated</div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 5px">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: @(AverageEvaluation[3] * 10)%" aria-valuenow="@(AverageEvaluation[3] * 10)" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                Work Ethic:
+                                            </div>
+                                            <div class="col-sm-6 text-end">
+                                                @if (AverageEvaluation[4] <= 10)
+                                                {
+                                                    @AverageEvaluation[4]
+                                                }
+                                                else
+                                                {
+                                                    <div>Not evaluated</div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="progress mb-3" style="height: 5px">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: @(AverageEvaluation[4] * 10)%" aria-valuenow="@(AverageEvaluation[4] * 10)" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-2">
+                            <div class="card-header">
+                                <h6 class="text-center">Personal Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">Employee ID</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.Id
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">Full Name</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.Name
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">Email</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.Email
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">Gender</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.Gender
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">Telephone</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.TelephoneNumber
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">Date Of Birth</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.DateOfBirth.ToString("MM/dd/yyyy")
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">CivilId</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.CivilId
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">File Number</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.FileNumber
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">Job Name</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.JobName
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">Salary</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.Salary.ToString("N0") VND
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <h6 class="mb-0">Address</h6>
+                                    </div>
+                                    <div class="col-sm-8 text-secondary">
+                                        @CurrentEmployee.Address
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card" style="margin-bottom: 12px;">
+                            <div class="card-header">
+                                <h6 class="text-center">
+                                    Office
+                                    <div class="dropdown float-end department-dropdown">
+                                        <a class="icon-dropdown dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-exclamation-octagon text-primary" id="cursorStyle"></i>
+                                        </a>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <button class="dropdown-item" @onclick="OpenGeneralDepartmentDialog">
+                                                    <i class="bi bi-file-medical text-primary"></i>
+                                                    General Department
+                                                </button>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <button class="dropdown-item" @onclick="OpenDepartmentDialog">
+                                                    <i class="bi bi-substack text-primary"></i>
+                                                    Department
+                                                </button>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <button class="dropdown-item" @onclick="OpenBranchDialog">
+                                                    <i class="bi bi-chevron-bar-contract text-primary"></i>
+                                                    Branch
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h6 class="mb-0">General Department</h6>
+                                    </div>
+                                    <div class="col-sm-6 text-secondary">
+                                        @GeneralDepartment.Name
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h6 class="mb-0">Department</h6>
+                                    </div>
+                                    <div class="col-sm-6 text-secondary">
+                                        @Department.Name
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h6 class="mb-0">Branch</h6>
+                                    </div>
+                                    <div class="col-sm-6 text-secondary">
+                                        @Branch.Name
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card" style="margin-bottom: 12px;">
+                            <div class="card-header">
+                                <h6 class="text-center">Location</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h6 class="mb-0">Country</h6>
+                                    </div>
+                                    <div class="col-sm-6 text-secondary">
+                                        @Country.Name
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h6 class="mb-0">City</h6>
+                                    </div>
+                                    <div class="col-sm-6 text-secondary">
+                                        @City.Name
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h6 class="mb-0">Town</h6>
+                                    </div>
+                                    <div class="col-sm-6 text-secondary">
+                                        @Town.Name
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mb-2">
+                            <div class="card-header">
+                                <h6 class="text-center">
+                                    Employee Transfer
+                                    @if (CurrentEmployeeTransfer.EmployeeRequest != null)
+                                    {
+                                        <i class="bi bi-exclamation-octagon text-primary float-end" id="cursorStyle" @onclick="() => OpenEmployeeTransferDetailDialog()"></i>
+                                    }
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h6 class="mb-0">NewPosition</h6>
+                                    </div>
+                                    <div class="col-sm-6 text-secondary">
+                                        @if (CurrentEmployeeTransfer.EmployeeRequest != null)
+                                        {
+                                            @CurrentEmployeeTransfer!.NewPosition
+                                        }
+                                        else
+                                        {
+                                            <span>No Transfer</span>
+                                        }
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h6 class="mb-0">Request Date</h6>
+                                    </div>
+                                    <div class="col-sm-6 text-secondary">
+                                        @if (CurrentEmployeeTransfer.EmployeeRequest != null)
+                                        {
+                                            @CurrentEmployeeTransfer!.RequestDate.ToString("MM/dd/yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span>No Transfer</span>
+                                        }
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <h6 class="mb-0">Branch Transfer</h6>
+                                    </div>
+                                    <div class="col-sm-6 text-secondary">
+                                        @if (CurrentEmployeeTransfer.EmployeeRequest != null)
+                                        {
+                                            @CurrentEmployeeTransfer!.Branch!.Name
+                                        }
+                                        else
+                                        {
+                                            <span>No Transfer</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .cursorStyle {
+        cursor: pointer
+    }
+
+    .department-dropdown .dropdown-toggle::after {
+        display: none;
+    }
+</style>
+
+<ChangePasswordDialog @ref="changePasswordDialog"
+                      Employee="CurrentEmployee"
+                      HandleSaveOperationEvent="HandleSaveOperationEvent" />
+
+<EmployeeTransferDetailDialog @ref="employeeTransferDetailDialog"
+                              CurrentEmployeeTransfer="CurrentEmployeeTransfer" />
+
+<GeneralDepartmentDialog @ref="generalDepartmentDialog"
+                         GeneralDepartment="GeneralDepartment" />
+
+<DepartmentDialog @ref="departmentDialog"
+                  Department="Department" />
+
+<BranchDialog @ref="branchDialog"
+              Branch="Branch" />
+
+<Resume @ref="resume"
+        CurrentEmployee="CurrentEmployee" />
+
+@code {
+    public Employee CurrentEmployee { get; set; } = new();
+    public EmployeeTransfer CurrentEmployeeTransfer { get; set; } = new();
+
+    public GeneralDepartment GeneralDepartment { get; set; } = new();
+    public Department Department { get; set; } = new();
+    public Branch Branch { get; set; } = new();
+
+    public Country Country { get; set; } = new();
+    public City City { get; set; } = new();
+    public Town Town { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+        try
+        {
+            var CurrentUserId = await customAuthStateProvider.GetCurrentUserId();
+            var CurrentUser = await accountService.GetUserById(int.Parse(CurrentUserId));
+            CurrentEmployee = await employeeService.GetById(CurrentUser.EmployeeId, Constants.EmployeeBaseUrl);
+
+            GeneralDepartment = CurrentEmployee.Branch!.Department!.GeneralDepartment!;
+            Department = CurrentEmployee.Branch!.Department!;
+            Branch = CurrentEmployee.Branch!;
+
+            Country = CurrentEmployee.Town!.City!.Country!;
+            City = CurrentEmployee.Town!.City!;
+            Town = CurrentEmployee.Town!;
+
+            CurrentEmployeeTransfer = await employeeTransferService.GetByEmployeeId(CurrentEmployee.Id, Constants.EmployeeTransferBaseUrl);
+            await GetPeriodicEvaluations();
+            CalculatorEvaluation();
+        }
+        catch
+        {
+            Console.WriteLine("Error");
+        }
+        allState.Action += StateHasChanged;
+    }
+
+    private async Task GetPeriodicEvaluations() => PeriodicEvaluations = await periodicEvaluationService.GetAllByEmployeeId(CurrentEmployee.Id, Constants.PeriodicEvaluationBaseUrl);
+
+    public List<PeriodicEvaluation> PeriodicEvaluations { get; set; } = new List<PeriodicEvaluation>();
+
+    public float[] AverageEvaluation { get; set; } = new float[5];
+
+    private void CalculatorEvaluation()
+    {
+        for (int i = 0; i < AverageEvaluation.Length; i++)
+        {
+            if (PeriodicEvaluations.Count > 0)
+                AverageEvaluation[i] = 0;
+            else
+                AverageEvaluation[i] = 11;
+        }
+
+        if (PeriodicEvaluations.Count > 0)
+        {
+            foreach (var item in PeriodicEvaluations)
+            {
+                AverageEvaluation[0] += item.TechnicalSkillsScore;
+                AverageEvaluation[1] += item.CommunicationSkillsScore;
+                AverageEvaluation[2] += item.TeamworkSkillsScore;
+                AverageEvaluation[3] += item.ProblemSolvingSkillsScore;
+                AverageEvaluation[4] += item.WorkEthicScore;
+            }
+            for (int i = 0; i < AverageEvaluation.Length; i++)
+            {
+                AverageEvaluation[i] /= PeriodicEvaluations.Count;
+                AverageEvaluation[i] = (float)Math.Round(AverageEvaluation[i], 1);
+            }
+        }
+    }
+
+    ChangePasswordDialog? changePasswordDialog;
+
+    void OpenChangePasswordDialog()
+    {
+        changePasswordDialog?.OpenDialog();
+    }
+
+    EmployeeTransferDetailDialog? employeeTransferDetailDialog;
+
+    void OpenEmployeeTransferDetailDialog()
+    {
+        employeeTransferDetailDialog?.OpenDialog();
+    }
+
+    GeneralDepartmentDialog? generalDepartmentDialog;
+
+    void OpenGeneralDepartmentDialog()
+    {
+        generalDepartmentDialog?.ChangeTitle("View");
+        generalDepartmentDialog?.OpenDialog();
+    }
+
+    DepartmentDialog? departmentDialog;
+
+    void OpenDepartmentDialog()
+    {
+        departmentDialog?.ChangeTitle("View");
+        departmentDialog?.OpenDialog();
+    }
+
+    BranchDialog? branchDialog;
+
+    void OpenBranchDialog()
+    {
+        branchDialog?.ChangeTitle("View");
+        branchDialog?.OpenDialog();
+    }
+
+    Resume? resume;
+
+    void Resume()
+    {
+        resume?.Open();
+    }
+
+    private async Task HandleSaveOperationEvent(ChangePasswordRequest changePasswordRequest)
+    {
+        var result = await accountService.ChangePasswordAsync(changePasswordRequest);
+        bool successCheck = await DisplayMessage(result.Flag, result.Message);
+        if (successCheck)
+        {
+            changePasswordDialog?.CloseDialog();
+        }
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

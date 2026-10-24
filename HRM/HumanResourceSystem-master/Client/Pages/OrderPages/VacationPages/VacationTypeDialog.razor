@@ -1,0 +1,55 @@
+﻿<SfDialog Width="350px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> @Title Vacation Type </Header>
+        <Content>
+            <EditForm Model="VacationType" Enhance OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <input @bind="VacationType.Name" class="form-control" />
+                        </div>
+                        <div class="form-group mt-2">
+                            <label class="form-label">Description</label>
+                            <InputTextArea @bind-Value="VacationType.Description" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="SAVE" Type="ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+    </DialogButtons>
+</SfDialog>
+
+@code {
+    [Parameter] public VacationType VacationType { get; set; } = new();
+    [Parameter] public EventCallback<VacationType> HandleSaveOperationEvent { get; set; }
+
+    public string Title { get; set; } = "Add";
+    private bool IsVisible { get; set; } = false;
+
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(VacationType.Name))
+            await dialogService.AlertAsync("You need to provide OvertimeType name.", "Alert!");
+        else
+            await HandleSaveOperationEvent.InvokeAsync(VacationType);
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+}

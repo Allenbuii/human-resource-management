@@ -1,0 +1,310 @@
+﻿@using Syncfusion.Blazor.Charts
+
+@if (IsVisible)
+{
+    <div class="row">
+        <div class="col-lg-9 border-end">
+            <SfChart Title="Recruitment Statistics" Width="100%">
+                <ChartArea><ChartAreaBorder Width="0"></ChartAreaBorder></ChartArea>
+                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category" EdgeLabelPlacement="EdgeLabelPlacement.Shift">
+                    <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+                </ChartPrimaryXAxis>
+                <ChartPrimaryYAxis Title="Total Bonus Amount" Minimum="0" Interval="1">
+                    <ChartAxisLineStyle Width="0"></ChartAxisLineStyle>
+                    <ChartAxisMajorTickLines Width="0"></ChartAxisMajorTickLines>
+                </ChartPrimaryYAxis>
+                <ChartSeriesCollection>
+                    <ChartSeries DataSource="@RecruitmentChartData" Name="Required Applicants" XName="MonthAbbreviation" YName="RequiredApplicants" ColumnSpacing="0.1" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                    <ChartSeries DataSource="@RecruitmentChartData" Name="Total Applicants" XName="MonthAbbreviation" YName="TotalApplicants" ColumnSpacing="0.1" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                    <ChartSeries DataSource="@RecruitmentChartData" Name="Interviewed" XName="MonthAbbreviation" YName="Interviewed" ColumnSpacing="0.1" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                    <ChartSeries DataSource="@RecruitmentChartData" Name="Accepted" XName="MonthAbbreviation" YName="Accepted" ColumnSpacing="0.1" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                    <ChartSeries DataSource="@RecruitmentChartData" Name="Rejected" XName="MonthAbbreviation" YName="Rejected" ColumnSpacing="0.1" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                </ChartSeriesCollection>
+                <ChartTooltipSettings Header="<b>${point.tooltip}</b>" Enable="true" Shared="true" Opacity="1"></ChartTooltipSettings>
+                <ChartLegendSettings EnableHighlight="true"></ChartLegendSettings>
+            </SfChart>
+        </div>
+        <div class="col-lg-3" style="padding-left: 0 !important;">
+            <div class="card-header">
+                <h6 class="text-center">Monthly Analysis</h6>
+            </div>
+            <div class="card-body">
+                @if (RecruitmentChartData.Count > 1)
+                {
+                    var lastMonthData = RecruitmentChartData.Last();
+                    var previousMonthData = RecruitmentChartData[RecruitmentChartData.Count - 2];
+
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-5">
+                            <h6 class="mb-0">Required Apps:</h6>
+                        </div>
+                        <div class="col-sm-7 text-secondary">
+                            @if (lastMonthData.RequiredApplicants - previousMonthData.RequiredApplicants > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.RequiredApplicants - previousMonthData.RequiredApplicants < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.RequiredApplicants, previousMonthData.RequiredApplicants)
+                        </div>
+                    </div>
+                    <hr class="custom-hr">
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-5">
+                            <h6 class="mb-0">Total Apps:</h6>
+                        </div>
+                        <div class="col-sm-7 text-secondary">
+                            @if (lastMonthData.TotalApplicants - previousMonthData.TotalApplicants > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.TotalApplicants - previousMonthData.TotalApplicants < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.TotalApplicants, previousMonthData.TotalApplicants)
+                        </div>
+                    </div>
+                    <hr class="custom-hr">
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-5">
+                            <h6 class="mb-0">Interviewed:</h6>
+                        </div>
+                        <div class="col-sm-7 text-secondary">
+                            @if (lastMonthData.Interviewed - previousMonthData.Interviewed > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.Interviewed - previousMonthData.Interviewed < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.Interviewed, previousMonthData.Interviewed)
+                        </div>
+                    </div>
+                    <hr class="custom-hr">
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-5">
+                            <h6 class="mb-0">Accepted:</h6>
+                        </div>
+                        <div class="col-sm-7 text-secondary">
+                            @if (lastMonthData.Accepted - previousMonthData.Accepted > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.Accepted - previousMonthData.Accepted < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.Accepted, previousMonthData.Accepted)
+                        </div>
+                    </div>
+                    <hr class="custom-hr">
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-5">
+                            <h6 class="mb-0">Rejected:</h6>
+                        </div>
+                        <div class="col-sm-7 text-secondary">
+                            @if (lastMonthData.Rejected - previousMonthData.Rejected > 0)
+                            {
+                                <i class="bi bi-caret-up-fill text-success"></i>
+                            }
+                            @if (lastMonthData.Rejected - previousMonthData.Rejected < 0)
+                            {
+                                <i class="bi bi-caret-down-fill text-danger"></i>
+                            }
+                            @CalculateChange(lastMonthData.Rejected, previousMonthData.Rejected)
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h6 class="mb-0">No data available for comparison</h6>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="card-header border-top">
+                <h6 class="text-center">Monthly Recruitment Performance</h6>
+            </div>
+            <div class="card-body">
+                @if (RecruitmentChartData.Count > 1)
+                {
+                    var lastMonthData = RecruitmentChartData.Last();
+
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">% Participation:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @CalculateMonthly(lastMonthData.RequiredApplicants, lastMonthData.TotalApplicants)
+                        </div>
+                    </div>
+                    <hr class="custom-hr">
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">% Interview:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @CalculateMonthly(lastMonthData.TotalApplicants, lastMonthData.Interviewed)
+                        </div>
+                    </div>
+                    <hr class="custom-hr">
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">% Accepted:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @CalculateMonthly(lastMonthData.TotalApplicants, lastMonthData.Accepted)
+                        </div>
+                    </div>
+                    <hr class="custom-hr">
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-sm-6">
+                            <h6 class="mb-0">% Rejected:</h6>
+                        </div>
+                        <div class="col-sm-6 text-secondary">
+                            @CalculateMonthly(lastMonthData.TotalApplicants, lastMonthData.Rejected)
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h6 class="mb-0">No data available for comparison</h6>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>    
+}
+
+<style>
+    .custom-hr {
+        margin-top: 8px;
+        margin-bottom: 8px;
+    }
+</style>
+
+@code {
+    public List<Recruitment> Recruitments { get; set; } = new();
+    public List<Candidate> Candidates { get; set; } = new();
+    [Parameter] public bool IsVisible { get; set; } = false;
+
+    public async void OpenRecruitmentsStatistical()
+    {
+        IsVisible = true;
+        await LoadRecruitments();
+        await LoadCandidates();
+        CalculateMonthly();
+        StateHasChanged();
+    }
+
+    public void CloseRecruitmentsStatistical()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadRecruitments() => Recruitments = await recruitmentService.GetAll(SupportConstants.RecruitmentBaseUrl);
+    private async Task LoadCandidates() => Candidates = await candidateService.GetAll(SupportConstants.CandidateBaseUrl);
+
+    private void CalculateMonthly()
+    {
+        var twelveMonths = Enumerable.Range(0, 12)
+            .Select(i => DateTime.Now.AddMonths(-i))
+            .Select(date => new DateTime(date.Year, date.Month, 1))
+            .ToList();
+
+        var startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-11);
+        var endDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1).AddDays(-1);
+
+        var recruitmentData = Recruitments
+            .Where(r => r.PostingDate >= startDate && r.PostingDate <= endDate)
+            .Select(r => new
+            {
+                Recruitment = r,
+                CandidatesForRecruitment = Candidates.Where(c => c.RecruitmentId == r.Id).ToList()
+            })
+            .GroupBy(x => new DateTime(x.Recruitment.PostingDate.Year, x.Recruitment.PostingDate.Month, 1))
+            .Select(g => new RecruitmentData
+                {
+                    PostingDate = g.Key,  
+                    RequiredApplicants = g.Sum(x => x.Recruitment.TotalPositions), 
+                    TotalApplicants = g.SelectMany(x => x.CandidatesForRecruitment).Count(),
+                    Interviewed = g.SelectMany(x => x.CandidatesForRecruitment).Count(c => c.Status == "Interview" || c.Status == "Accepted" || c.Status == "Be employee"), 
+                    Accepted = g.SelectMany(x => x.CandidatesForRecruitment).Count(c => c.Status == "Accepted" || c.Status == "Be employee"), 
+                    Rejected = g.SelectMany(x => x.CandidatesForRecruitment).Count(c => c.Status == "Rejected"),
+                    MonthAbbreviation = g.Key.ToString("yyyy MMM") 
+                })
+            .ToList();
+
+        foreach (var month in twelveMonths)
+        {
+            if (!recruitmentData.Any(d => d.PostingDate.Year == month.Year && d.PostingDate.Month == month.Month))
+            {
+                recruitmentData.Add(new RecruitmentData
+                    {
+                        PostingDate = month,
+                        RequiredApplicants = 0,
+                        TotalApplicants = 0,
+                        Interviewed = 0,
+                        Accepted = 0,
+                        Rejected = 0,
+                        MonthAbbreviation = month.ToString("yyyy MMM")
+                    });
+            }
+        }
+
+        RecruitmentChartData = recruitmentData.OrderBy(d => d.PostingDate).ToList();
+    }
+
+    public class RecruitmentData
+    {
+        public DateTime PostingDate { get; set; }
+        public int RequiredApplicants { get; set; }
+        public int TotalApplicants { get; set; }
+        public int Interviewed { get; set; }
+        public int Accepted { get; set; }
+        public int Rejected { get; set; }
+        public string? MonthAbbreviation { get; set; }
+    }
+
+    public List<RecruitmentData> RecruitmentChartData { get; set; } = new List<RecruitmentData>();
+
+    private string CalculateChange(double currentScore, double previousScore)
+    {
+        double change = currentScore - previousScore;
+        string changeIndicator = (change == 0) ? "No Change" : "";
+
+        if (change == 0) return changeIndicator;
+
+        double percentageChange = previousScore != 0 ? (change / previousScore) * 100 : 0;
+
+        return $"{changeIndicator} {Math.Abs(change).ToString("N0")} ({Math.Abs(percentageChange):0.0}%)";
+    }
+
+    private string CalculateMonthly(double totalScore, double Score)
+    {
+        if (totalScore == 0) return "#%";
+        
+        double percentageChange = (Score / totalScore) * 100;
+
+        return $"{Math.Abs(percentageChange):0.0}%";
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}
+

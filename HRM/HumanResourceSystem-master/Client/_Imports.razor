@@ -1,0 +1,103 @@
+﻿@using System.Net.Http
+@using System.Net.Http.Json
+@using BaseLibrary.Entities
+@using Client.ApplicationStates
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@using Microsoft.JSInterop
+@using Client
+@using Client.Layout
+    
+@using BaseLibrary.DTOs
+@using ClientLibrary.Helpers
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@using ClientLibrary.Services.Contracts
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+
+@using Client.Pages.ContentPages.StatisticalPages
+@using Client.Pages.ContentPages.EvaluationPages
+@using Client.Pages.ContentPages.TrainingPages
+@using Client.Pages.ContentPages.RecruitmentPages
+@using Client.Pages.AccountPages
+@using Client.Pages.OrderPages.BonusPages
+@using Client.Pages.OrderPages.OvertimePages
+@using Client.Pages.OrderPages.VacationPages
+@using Client.Pages.OrderPages.DoctorPages
+@using Client.Pages.OrderPages.SanctionPages
+@using Client.Pages.ContentPages.EmployeePages
+@using Client.Pages.ContentPages.UserPages
+@using Client.Pages.ContentPages.LocationPages
+@using Client.Pages.ContentPages.DepartmentPages
+@using Client.Pages.ContentPages.IndividualPages
+@using Client.Pages.ContentPages.EmployeeTransferPages
+@using Client.Pages.ContentPages.Another
+@using Client.Pages.OrderPages
+
+@using Append.Blazor.Printing
+@inject IPrintingService PrintingService
+
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavManager
+
+@* // Authentication *@
+@inject IUserAccountService accountService
+
+@* // Navbar tabs communication state handing *@
+@inject AllState allState
+
+@* // Syncfusion dialog service *@
+@inject SfDialogService dialogService
+
+@* // General Departments / Department / Branch *@
+@inject IGenericServiceInterface<GeneralDepartment> generalDepartmentService
+@inject IGenericServiceInterface<Department> departmentService
+@inject IBranchService branchService
+
+@* // Country / City / Town *@
+@inject IGenericServiceInterface<Country> countryService
+@inject IGenericServiceInterface<City> cityService
+@inject IGenericServiceInterface<Town> townService
+
+@* // Suplementary tables *@
+@inject IGenericServiceInterface<Overtime> overtimeService
+@inject IGenericServiceInterface<OvertimeType> overtimeTypeService
+
+@inject IGenericServiceInterface<Vacation> vacationService
+@inject IGenericServiceInterface<VacationType> vacationTypeService
+
+@inject IGenericServiceInterface<Sanction> sanctionService
+@inject IGenericServiceInterface<SanctionType> sanctionTypeService
+
+@inject IGenericServiceInterface<Doctor> doctorService
+
+@* // Recruitment / Candidate *@
+@inject IGenericServiceInterface<Recruitment> recruitmentService
+@inject ICandidateService candidateService
+
+@* // TrainingProgram / Instructor / Degree *@
+@inject IGenericServiceInterface<TrainingProgram> trainingProgramService
+@inject IGenericServiceInterface<Instructor> instructorService
+@inject IDegreeService degreeService
+
+@* //PeriodicEvaluation *@
+@inject IPeriodicEvaluationService periodicEvaluationService
+
+@* //Bonus *@
+@inject IBonusService bonusService
+
+@* //EmployeeTransfer *@
+@inject IEmployeeTransferService employeeTransferService
+
+@* // Employee *@
+@inject IGenericServiceInterface<Employee> employeeService
+
+@* // Notification *@
+@inject INotificationService notificationService
+

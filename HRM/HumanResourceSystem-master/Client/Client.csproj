@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="Append.Blazor.Printing" Version="6.3.0" />
+	  <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+	  <PackageReference Include="jsreport.Local" Version="3.8.2" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.4" />
+	  <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+	  <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.4" PrivateAssets="all" />
+    <PackageReference Include="Syncfusion.Blazor.Buttons" Version="27.1.53" />
+    <PackageReference Include="Syncfusion.Blazor.Charts" Version="27.1.53" />
+    <PackageReference Include="Syncfusion.Blazor.DropDowns" Version="27.1.53" />
+    <PackageReference Include="Syncfusion.Blazor.Grid" Version="27.1.53" />
+    <PackageReference Include="Syncfusion.Blazor.Popups" Version="27.1.53" />
+    <PackageReference Include="Syncfusion.Blazor.Themes" Version="27.1.53" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BaseLibrary\BaseLibrary.csproj" />
+    <ProjectReference Include="..\ClientLibrary\ClientLibrary.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Pages\ContentPages\EmployeePages\DegreeDialog.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
+</Project>

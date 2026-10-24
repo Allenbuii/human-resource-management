@@ -1,0 +1,131 @@
+﻿
+@if (IsVisible)
+{
+    <div class="card-body">
+        @{
+            var Tool = (new List<string>() { "Search", "ExcelExport", "PdfExport", "Print" });
+        }
+        <SfGrid DataSource="@MySanctions" AllowPaging="true" AllowSorting="true" Toolbar=@Tool AllowExcelExport="true" @ref="DefaultGrid" AllowPdfExport="true">
+            <GridPageSettings PageSize="5"></GridPageSettings>
+            <GridEvents OnToolbarClick="ToolbarClickHanlder" TValue="SanctionData"></GridEvents>
+            <GridColumns>
+                <GridColumn Field=@nameof(SanctionData.EmployeeId) HeaderText="Employee ID"></GridColumn>
+                <GridColumn Field=@nameof(SanctionData.Employee) HeaderText="Employee Name"></GridColumn>
+                <GridColumn Field=@nameof(SanctionData.Type) HeaderText="Type"></GridColumn>
+                <GridColumn Field=@nameof(SanctionData.OcurringDate) HeaderText="Ocurring Date"></GridColumn>
+                <GridColumn Field=@nameof(SanctionData.PunishmentDate) HeaderText="Punishment Date"></GridColumn>
+                <GridColumn HeaderText="Action">
+                    <Template>
+                        @{
+                            var item = (context as SanctionData);
+                            <div>
+                                <i class="bi bi-eye text-info" id="cursorStyle" @onclick="() => ShowClicked(item!.Sanction!)"></i>
+                            </div>
+                        }
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </SfGrid>
+    </div>                    
+}
+
+<style>
+    .cursorStyle {
+        cursor: pointer
+    }
+</style>
+
+<SanctionDialog @ref="sanctionDialog"
+                ItemModel="ItemModel"
+                SanctionTypes="SanctionTypes">
+</SanctionDialog>
+
+@code {
+    private SfGrid<SanctionData>? DefaultGrid;
+    SanctionDialog? sanctionDialog;
+    Sanction ItemModel = new();
+    public List<Sanction> Sanctions { get; set; } = new();
+    public List<SanctionType> SanctionTypes { get; set; } = new();
+
+    [Parameter] public bool IsVisible { get; set; } = false;
+
+    [Parameter] public int CurrentEmployeeId { get; set; } = new();
+
+    public class SanctionData
+    {
+        public Sanction? Sanction { get; set; }
+        public int EmployeeId { get; set; }
+        public string? Employee { get; set; }
+        public string? Type { get; set; }
+        public string? OcurringDate { get; set; }
+        public string? PunishmentDate { get; set; }
+    }
+
+    public List<SanctionData> MySanctions { get; set; } = new List<SanctionData>();
+
+    public async void OpenMySanction()
+    {
+        IsVisible = true;
+        await Setups();
+        StateHasChanged();
+    }
+
+    public void CloseMySanction()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    public async Task Setups()
+    {
+        await GetSanctions();
+        await GetTypes();
+    }
+
+    private async Task GetTypes() => SanctionTypes = await sanctionTypeService.GetAll(Constants.SanctionTypeBaseUrl);
+
+    private async Task GetSanctions()
+    { 
+        Sanctions = await sanctionService.GetAll(Constants.SanctionBaseUrl);
+        await GetSanctionData();
+    }
+
+    private async Task GetSanctionData()
+    {
+        MySanctions = Sanctions
+        .Where(s => s.EmployeeId == CurrentEmployeeId)
+        .Select(s => new SanctionData
+            {
+                Sanction = s,
+                EmployeeId = s.EmployeeId,
+                Employee = s.Employee?.Name,
+                Type = s.SanctionType?.Name,
+                OcurringDate = s.Date.ToString("MM/dd/yyyy"),
+                PunishmentDate = s.PunishmentDate.ToString("MM/dd/yyyy")
+            })
+        .Reverse()
+        .ToList();
+    }
+
+    void OpenDialog() => sanctionDialog?.OpenDialog();
+
+    // Show
+    private void ShowClicked(Sanction item)
+    {
+        ItemModel = item;
+        sanctionDialog?.ChangeTitle("View");
+        OpenDialog();
+    }
+
+    // Excel Export / PDF Export
+    public async Task ToolbarClickHanlder(Syncfusion.Blazor.Navigations.ClickEventArgs args)
+    {
+        if (args.Item.Text == "Excel Export")
+            await this.DefaultGrid!.ExcelExport()!;
+
+        if (args.Item.Text == "PDF Export")
+            await this.DefaultGrid!.PdfExport()!;
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

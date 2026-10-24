@@ -1,0 +1,104 @@
+﻿@implements IDisposable
+
+@if (allState.ShowPeriodicEvaluation)
+{
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="float-start">Periodic Evaluation</h4>
+                    </div>
+                    <div class="card-header" style="max-height:580px; overflow-x:hidden; overflow-y:scroll;">
+                        <div class="card-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Id</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Job Name</th>
+                                        <th scope="col">Branch</th>
+                                        <th scope="col">Town</th>
+                                        <th scope="col">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Employees is not null)
+                                    {
+                                        int count = 1;
+                                        foreach (var item in Employees)
+                                        {
+                                            <tr>
+                                                <th scope="row">@count</th>
+                                                <td>@item.Id</td>
+                                                <td>@item.Name</td>
+                                                <td>@item.JobName</td>
+                                                <td>@item.Branch!.Name</td>
+                                                <td>@item.Town!.Name</td>
+                                                <td>
+                                                    <i class="bi bi-eye text-info" id="cursorStyle" @onclick="() => ShowEvaluation(item)"></i>
+                                                </td>
+                                            </tr>
+                                            count++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="4"><div class="alert alert-info text-center">No Department added yet!</div></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .cursorStyle {
+        cursor: pointer
+    }
+</style>
+
+<PeriodicEvaluationDialog @ref="periodicEvaluationDialog"
+                          Employee="Employee"
+                          PeriodicEvaluations="PeriodicEvaluations" />
+
+@code {
+    public Employee Employee { get; set; } = new();
+    public List<Employee> Employees { get; set; } = [];
+
+    public List<PeriodicEvaluation> PeriodicEvaluations { get; set; } = new();
+
+    PeriodicEvaluationDialog? periodicEvaluationDialog;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmployees();
+        allState.Action += StateHasChanged;
+        //allState.PeriodicEvaluationAction += LoadDefaults;
+    }
+
+    private async void LoadDefaults()
+    {
+        await LoadEmployees();
+        StateHasChanged();
+    }
+
+    private async Task LoadEmployees() => Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+
+    private async void ShowEvaluation(Employee item)
+    {
+        Employee = item;
+        periodicEvaluationDialog?.OpenDialog();
+        PeriodicEvaluations = await periodicEvaluationService.GetAllByEmployeeId(item.Id, Constants.PeriodicEvaluationBaseUrl);
+        StateHasChanged();
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

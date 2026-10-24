@@ -1,0 +1,224 @@
+﻿<SfDialog Width="750px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> @Title Candidate </Header>
+        <Content>
+            <EditForm Model="Candidate" Enhance OnSubmit="Save">
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-1"></div>
+                            <div class="col-lg-10">
+                                <div class="form-group">
+                                    <label class="form-label">Id</label>
+                                    <input @bind="Candidate.Id" class="form-control" disabled />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-1"></div>
+                            <div class="col-lg-5">
+                                <div class="form-group">
+                                    <label class="form-label">Name</label>
+                                    <InputText @bind-Value="Candidate.Name" class="form-control" disabled="@isDisabled" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Address</label>
+                                    <InputText @bind-Value="Candidate.Address" class="form-control" disabled="@isDisabled" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Email</label>
+                                    <InputText @bind-Value="Candidate.Email" class="form-control" disabled="@isDisabled" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Telephone</label>
+                                    <InputText @bind-Value="Candidate.TelephoneNumber" class="form-control" disabled="@isDisabled" />
+                                </div>
+                            </div>
+                            <div class="col-lg-5">
+                                <div class="form-group">
+                                    <label class="form-label">Application Date</label>
+                                    <InputDate @bind-Value="Candidate.ApplicationDate" class="form-control" disabled="@isDisabled" />
+                                </div>
+                                <div class="form-group mt-1">
+                                    <label class="form-label">Select Recruitment</label>
+                                    @if (Candidate.Recruitment != null)
+                                    {
+                                        string selected = Candidate.Recruitment.Name!;
+                                        <SfDropDownList TValue="string" TItem="Recruitment" Placeholder="@selected" DataSource="Recruitments" Enabled="!isDisabled">
+                                            <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                            <DropDownListEvents TValue="string" TItem="Recruitment" ValueChange="OnValueChange"></DropDownListEvents>
+                                        </SfDropDownList>
+                                    }
+                                    else
+                                    {
+                                        <SfDropDownList TValue="string" TItem="Recruitment" Placeholder="Selected Recruitment" DataSource="Recruitments" Enabled="!isDisabled">
+                                            <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                            <DropDownListEvents TValue="string" TItem="Recruitment" ValueChange="OnValueChange"></DropDownListEvents>
+                                        </SfDropDownList>
+                                    }
+                                </div>
+                                <div class="form-group mt-1">
+                                    <label class="form-label">Status</label>
+                                    @if (Candidate.Status != null)
+                                    {
+                                        string selected = Candidate.Status;
+                                        bool isEmployee = Candidate.Status.Equals("Be employee");
+                                        <SfDropDownList TValue="string" TItem="StatusType" Placeholder="@selected" DataSource="LocalData" Enabled="!isEmployee && !isDisabled">
+                                            <DropDownListFieldSettings Value="Text" Text="Text"></DropDownListFieldSettings>
+                                            <DropDownListEvents TValue="string" TItem="StatusType" ValueChange="OnStatusChange"></DropDownListEvents>
+                                        </SfDropDownList>
+                                    }
+                                    else
+                                    {
+                                        <SfDropDownList TValue="string" TItem="StatusType" Placeholder="Selected Status" DataSource="LocalData" Enabled="!isDisabled">
+                                            <DropDownListFieldSettings Value="Text" Text="Text"></DropDownListFieldSettings>
+                                            <DropDownListEvents TValue="string" TItem="StatusType" ValueChange="OnStatusChange"></DropDownListEvents>
+                                        </SfDropDownList>
+                                    }
+                                </div>
+                                <div class="form-group mt-1">
+                                    <label class="form-label">Link CV</label>
+                                    <InputText @bind-Value="Candidate.CVLink" class="form-control" disabled="@isDisabled" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>       
+        @if (Title == "View")
+        {
+            <DialogButton Content="CLOSE" IsPrimary="true" OnClick="CloseDialog" />
+        }
+        else
+        {
+            @if (Title == "Update" && Candidate.Status == "Accepted" && !IsChangeStatus)
+            {
+                <DialogButton Content="Convert Candidates" OnClick="ConvertCandidatesButtonClicked" />
+            }
+            <DialogButton Content="SAVE" Type="ButtonType.Submit" IsPrimary="true" OnClick="Save" />
+        }
+    </DialogButtons>
+</SfDialog>
+
+<ConvertCandidatesIntoEmployeesDialog @ref="convertCandidatesIntoEmployeesDialog"
+                                      Candidate="Candidate"
+                                      HandleSaveCCTEEvent="HandleSaveCCTEEvent" />
+
+@code {
+    [Parameter] public Candidate Candidate { get; set; } = new();
+    [Parameter] public List<Recruitment> Recruitments { get; set; } = new();
+    [Parameter] public EventCallback<Candidate> HandleSaveOperationEvent { get; set; }
+
+    ConvertCandidatesIntoEmployeesDialog? convertCandidatesIntoEmployeesDialog;
+
+    public bool IsChangeStatus = false;
+
+    // Convert Candidates Into Employees
+    private async Task HandleSaveCCTEEvent(Employee item)
+    {
+        bool successCheck = false;
+        var result = await employeeService.Insert(item, Constants.EmployeeBaseUrl);
+        successCheck = await DisplayMessage(result.Flag, result.Message);
+        if (successCheck)
+        {
+            Candidate.Status = "Be employee";
+            await candidateService.Update(Candidate, Constants.CandidateBaseUrl);
+            convertCandidatesIntoEmployeesDialog?.CloseDialog();
+            IsChangeStatus = true;
+            StateHasChanged();
+        }
+    }
+
+    public class StatusType
+    {
+        public string Text { get; set; }
+    }
+    List<StatusType> LocalData = new List<StatusType> {
+    new StatusType() { Text= "Pending" },
+    new StatusType() { Text= "Interview" },
+    new StatusType() { Text= "Accepted" },
+    new StatusType() { Text= "Rejected" },
+    };
+
+    private bool IsVisible { get; set; } = false;
+    public string Title { get; set; } = "Add";
+
+    private bool isDisabled => Title == "View";
+
+    private async void Save()
+    {
+        if (string.IsNullOrEmpty(Candidate.Name))
+            await dialogService.AlertAsync("You need to provide name.", "Alert!");
+        else
+        if (string.IsNullOrEmpty(Candidate.Address))
+            await dialogService.AlertAsync("You need to provide address.", "Alert!");
+        else
+        if (string.IsNullOrEmpty(Candidate.Email))
+            await dialogService.AlertAsync("You need to provide email.", "Alert!");
+        else
+        if (string.IsNullOrEmpty(Candidate.TelephoneNumber))
+            await dialogService.AlertAsync("You need to provide telephone number.", "Alert!");
+        else
+        if (Candidate.ApplicationDate == DateTime.MinValue)
+            await dialogService.AlertAsync("You need to provide application date.", "Alert!");
+        else
+        if (Candidate.RecruitmentId <= 0)
+            await dialogService.AlertAsync("You need to provide Recruitment name.", "Alert!");
+        else
+        if (string.IsNullOrEmpty(Candidate.CVLink))
+            await dialogService.AlertAsync("You need to provide link CV.", "Alert!");
+        else
+        {
+            if (Title == "Add" && string.IsNullOrEmpty(Candidate.Status)) Candidate.Status = "Pending";
+            IsChangeStatus = false;
+            ChangeTitle("Add");
+            await HandleSaveOperationEvent.InvokeAsync(Candidate);
+        }
+
+    }
+
+    public void OpenDialog()
+    {
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    public void ChangeTitle(string title) => Title = title;
+
+    void ConvertCandidatesButtonClicked()
+    {
+        convertCandidatesIntoEmployeesDialog?.OpenDialog();
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+
+    public void OnValueChange(ChangeEventArgs<string, Recruitment> args) => Candidate.RecruitmentId = int.Parse(args.Value);
+
+    public void OnStatusChange(ChangeEventArgs<string, StatusType> args)
+    {
+        Candidate.Status = args.Value.ToString();
+        IsChangeStatus = true;
+    }
+}

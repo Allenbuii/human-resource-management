@@ -1,0 +1,181 @@
+@implements IDisposable
+
+@if (allState.ShowPeerEvaluation)
+{
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="float-start">Peer Evaluation</h4>
+                    </div>
+                    <div class="card-header" style="max-height:580px; overflow-x:hidden; overflow-y:scroll;">
+                        <div class="card-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Id</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Job Name</th>
+                                        <th scope="col">Branch</th>
+                                        <th scope="col">Town</th>
+                                        <th scope="col">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (SelectedEmployees is not null)
+                                    {
+                                        int count = 1;
+                                        foreach (var item in SelectedEmployees)
+                                        {
+                                            <tr>
+                                                <th scope="row">@count</th>
+                                                <td>@item.Id</td>
+                                                <td>@item.Name</td>
+                                                <td>@item.JobName</td>
+                                                <td>@item.Branch.Name</td>
+                                                <td>@item.Town.Name</td>
+                                                <td>
+                                                    @if (DateTime.Now.Day <= 5)
+                                                    {
+                                                        <i class="bi bi-pencil text-info" id="cursorStyle" @onclick="() => AddOrUpdate(item)"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-eye text-info" id="cursorStyle" @onclick="() => ShowClicked(item)"></i>
+                                                    }
+                                                </td>
+                                            </tr>
+                                            count++;
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .cursorStyle {
+        cursor: pointer
+    }
+</style>
+
+<AddOrUpdatePeriodicEvaluationDialog @ref="addOrUpdatePeriodicEvaluationDialog"
+                                     PeriodicEvaluation="PeriodicEvaluation"
+                                     HandleSavePeriodicEvaluationEvent="HandleSavePeriodicEvaluationEvent" />
+
+@code {
+    public List<Employee> Employees { get; set; } = [];
+    public List<Employee> SelectedEmployees { get; set; } = [];
+    public Employee CurrentEmployee { get; set; } = new();
+    public Employee SelectedEmployee { get; set; } = new();
+
+    protected async override Task OnInitializedAsync()
+    {
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+        try
+        {
+            var CurrentUserId = await customAuthStateProvider.GetCurrentUserId();
+            var CurrentUser = await accountService.GetUserById(int.Parse(CurrentUserId));
+            CurrentEmployee = await employeeService.GetById(CurrentUser.EmployeeId, Constants.EmployeeBaseUrl);
+        }
+        catch
+        {
+            Console.WriteLine("Error");
+        }
+        await LoadEmployees();
+        allState.Action += StateHasChanged;
+    }
+
+    private async Task LoadEmployees(){
+        Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        SelectedEmployees = Employees.Where(e => e.BranchId == CurrentEmployee.BranchId && e.Id != CurrentEmployee.Id).ToList();
+        if (CurrentEmployee.Branch!.SupervisorId == CurrentEmployee.Id)
+        {
+            var manager = Employees.SingleOrDefault(e => e.Id == CurrentEmployee.Branch.Department!.ManagerId);
+            if (manager != null) SelectedEmployees.Add(manager);
+        }
+    }
+
+    AddOrUpdatePeriodicEvaluationDialog? addOrUpdatePeriodicEvaluationDialog;
+    public PeriodicEvaluation PeriodicEvaluation { get; set; } = new();
+    private PeriodicEvaluation ClosestPeriodicEvaluation { get; set; } = new();
+
+    // Convert Candidates Into Employees
+    private async Task HandleSavePeriodicEvaluationEvent(PeriodicEvaluation item)
+    {
+        bool successCheck = false;
+        if (item.Id > 0)
+        {
+            var result = await periodicEvaluationService.Update(item, Constants.PeriodicEvaluationBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        else
+        {
+            item.Name = "Periodic Evaluation";
+            var result = await periodicEvaluationService.Insert(item, Constants.PeriodicEvaluationBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        if (successCheck)
+        {
+            PeriodicEvaluation.Employee = SelectedEmployee;
+            await periodicEvaluationService.SendEmail(addOrUpdatePeriodicEvaluationDialog!.Title, item, Constants.PeriodicEvaluationBaseUrl);
+            StateHasChanged();
+            addOrUpdatePeriodicEvaluationDialog?.CloseDialog();
+            addOrUpdatePeriodicEvaluationDialog?.ChangeTitle("Add");
+        }
+    }
+
+    private async void AddOrUpdate(Employee item)
+    {
+        PeriodicEvaluation = new();
+        SelectedEmployee = new();
+        SelectedEmployee = item;
+        PeriodicEvaluation.AssessorId = CurrentEmployee.Id;
+        PeriodicEvaluation.EmployeeId = item.Id;
+        PeriodicEvaluation.Employee = item;
+
+        addOrUpdatePeriodicEvaluationDialog?.ChangeTitle("Add");
+
+        ClosestPeriodicEvaluation = new();
+        ClosestPeriodicEvaluation = await periodicEvaluationService.GetClosestByEmployeeId(item.Id, Constants.PeriodicEvaluationBaseUrl);
+        if (ClosestPeriodicEvaluation.EvaluationDate.Month == DateTime.Now.Month && ClosestPeriodicEvaluation.AssessorId == CurrentEmployee.Id)
+        {
+            PeriodicEvaluation = ClosestPeriodicEvaluation;
+            addOrUpdatePeriodicEvaluationDialog?.ChangeTitle("Update");
+        }
+
+        addOrUpdatePeriodicEvaluationDialog?.OpenDialog();
+        StateHasChanged();
+    }
+
+    private async void ShowClicked(Employee item)
+    {
+        PeriodicEvaluation = await periodicEvaluationService.GetClosestByEmployeeId(item.Id, Constants.PeriodicEvaluationBaseUrl);
+        addOrUpdatePeriodicEvaluationDialog?.ChangeTitle("View");
+        addOrUpdatePeriodicEvaluationDialog?.OpenDialog();
+        StateHasChanged();
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

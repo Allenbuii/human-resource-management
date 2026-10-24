@@ -1,0 +1,169 @@
+﻿<SfDialog Width="1000px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> 
+            Employee Transfer
+        </Header>
+        <Content>
+            <div class="card border-success">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Branch Id</label>
+                        <input @bind="Branch.Id" class="form-control" disabled />
+                    </div>    
+                    <div class="form-group mt-2">
+                        <label class="form-label">Branch Name</label>
+                        <InputText @bind-Value="Branch.Name" class="form-control" disabled />
+                    </div>
+                    <div class="form-group mt-2">
+                        <SfGrid DataSource="@EmployeeTransfers" AllowPaging="true" AllowSorting="true" @ref="DefaultGrid">
+                            <GridPageSettings PageSize="8"></GridPageSettings>
+                            <GridColumns>
+                                <GridColumn Width="45" HeaderText="@TransferCount.ToString()" HeaderTextAlign="TextAlign.Center"></GridColumn>
+                                <GridColumn Field="@nameof(EmployeeTransfer.EmployeeId)" HeaderText="ID" Width="50px"></GridColumn>
+                                <GridColumn HeaderText="Name">
+                                    <Template>
+                                        @{
+                                            var item = (context as EmployeeTransfer);
+                                            <div>
+                                                @item!.Employee!.Name
+                                            </div>
+                                        }
+                                    </Template>
+                                </GridColumn>
+                                <GridColumn HeaderText="General Department">
+                                    <Template>
+                                        @{
+                                            var item = (context as EmployeeTransfer);
+                                            <div>
+                                                @item!.Employee!.Branch!.Department!.GeneralDepartment!.Name
+                                            </div>
+                                        }
+                                    </Template>
+                                </GridColumn> 
+                                <GridColumn HeaderText="Department">
+                                    <Template>
+                                        @{
+                                            var item = (context as EmployeeTransfer);
+                                            <div>
+                                                @item!.Employee!.Branch!.Department!.Name
+                                            </div>
+                                        }
+                                    </Template>
+                                </GridColumn>
+                                <GridColumn HeaderText="Branch">
+                                    <Template>
+                                        @{
+                                            var item = (context as EmployeeTransfer);
+                                            <div>
+                                                @item!.Employee!.Branch!.Name
+                                            </div>
+                                        }
+                                    </Template>
+                                </GridColumn>    
+                                <GridColumn HeaderText="Action">
+                                    <Template>
+                                        @{
+                                            var item = (context as EmployeeTransfer);
+                                            <div>
+                                                <i class="bi bi-eye text-info" id="cursorStyle" @onclick="() => ShowClicked(item)"></i>&#160;
+                                                <i class="bi bi-trash text-danger" id="cursorStyle" @onclick="() => DeleteClicked(item)"></i>
+                                            </div>
+                                        }
+                                    </Template>
+                                </GridColumn>
+                            </GridColumns>
+                        </SfGrid>
+                    </div>
+                </div>
+            </div>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="CLOSE" IsPrimary="true" OnClick="CloseDialog" />
+    </DialogButtons>
+</SfDialog>
+
+<EmployeeTransferDialog @ref="employeeTransferDialog"
+                        Branch="Branch"
+                        EmployeesData="Employees"
+                        EmployeeTransfer="CurrentEmployeeTransfer"/>
+
+@code {
+    private SfGrid<EmployeeTransfer>? DefaultGrid;
+
+    [Parameter] public Branch Branch { get; set; } = new();
+    public List<EmployeeTransfer> EmployeeTransfers { get; set; } = new();
+
+    [Parameter] public EventCallback HandleDeleteOperationEvent { get; set; }
+
+    private bool IsVisible { get; set; } = false;
+
+    private int TransferCount { get; set; } = 0;
+
+    public List<Employee> AddedEmployees { get; set; } = new();
+
+    public async void OpenDialog()
+    {
+        IsVisible = true;
+        AddedEmployees = new();
+        TransferCount = Branch.CurrentEmployeeTransfers;
+        try
+        {
+            await GetEmployeeTransfers();
+        }
+        catch {}
+        StateHasChanged();
+    }
+
+    private async Task GetEmployeeTransfers() => EmployeeTransfers = await employeeTransferService.GetAllByBranchId(Branch.Id, Constants.EmployeeTransferBaseUrl);
+
+    public void CloseDialog()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    EmployeeTransferDialog? employeeTransferDialog;
+    EmployeeTransfer CurrentEmployeeTransfer = new();
+    List<Employee> Employees = new();
+    // Show
+    private void ShowClicked(EmployeeTransfer employeeTransfer)
+    {
+        CurrentEmployeeTransfer = employeeTransfer;
+        Employees.Add(employeeTransfer!.Employee!);
+        employeeTransferDialog?.ChangeTitle("View");
+        employeeTransferDialog?.OpenDialog();
+    }
+
+    //Delete
+    private async Task DeleteClicked(EmployeeTransfer item)
+    {
+        bool confrim = await dialogService.ConfirmAsync($"Are you sure you wanna delete this?", "Confrim Delete");
+        if (!confrim) return;
+
+        var response = await employeeTransferService.DeleteById(item.Id, Constants.EmployeeTransferBaseUrl);
+        var result = await DisplayMessage(response.Flag, response.Message);
+        if (result)
+        {
+            await HandleDeleteOperationEvent.InvokeAsync();
+            await GetEmployeeTransfers();
+            StateHasChanged();
+        }
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+
+}

@@ -1,0 +1,182 @@
+﻿@implements IDisposable
+
+@if (allState.ShowTrainingProgram)
+{
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="float-start">Training Program</h4>
+                        <button class="btn btn-outline-success float-end" @onclick="AddButtonClicked"><i class="bi bi-plus-circle-dotted"> </i> Add Training Program </button>
+                    </div>
+                    <div class="card-header" style="max-height:580px; overflow-x:hidden; overflow-y:scroll;">
+                        <div class="card-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Id</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Start Date</th>
+                                        <th scope="col">End Date</th>
+                                        <th scope="col">Training Day</th>
+                                        <th scope="col">Instructor</th>
+                                        <th scope="col">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (TrainingPrograms is not null)
+                                    {
+                                        int count = 1;
+                                        foreach (var item in TrainingPrograms)
+                                        {
+                                            <tr>
+                                                <th scope="row">@count</th>
+                                                <td>@item.Id</td>
+                                                <td>@item.Name</td>
+                                                <td>@item.StartDate.ToString("MM/dd/yyyy")</td>
+                                                <td>@item.EndDate.ToString("MM/dd/yyyy")</td>
+                                                <td>@item.TrainingDay</td>
+                                                <td>@item.Instructor!.Name</td>
+                                                <td>                                                    
+                                                    @if (item.EndDate > DateTime.Now)
+                                                    {
+                                                        <i class="bi bi-pencil text-primary" id="cursorStyle" @onclick="() => EditClicked(item)"></i>
+                                                        <span> </span>
+                                                        <i class="bi bi-trash text-danger" id="cursorStyle" @onclick="() => DeleteClicked(item)"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-eye text-info" id="cursorStyle" @onclick="() => ShowClicked(item)"></i>
+                                                    }                                                  
+                                                </td>
+                                            </tr>
+                                            count++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="4"><div class="alert alert-info text-center">No User registered yet!</div></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .cursorStyle {
+        cursor: pointer
+    }
+</style>
+
+<TrainingProgramDialog @ref="trainingProgramDialog"
+                       HandleSaveOperationEvent="HandleSaveOperationEvent"
+                       TrainingProgram="TrainingProgram"
+                       Instructors="Instructors" />
+
+@code {
+    public string Title { get; set; } = "Add";
+    TrainingProgramDialog? trainingProgramDialog;
+    TrainingProgram TrainingProgram = new();
+    public List<TrainingProgram> TrainingPrograms { get; set; } = new();
+    public List<Instructor> Instructors { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {        
+        allState.Action += StateHasChanged;
+        allState.TrainingProgramAction += LoadDefaults;
+    }
+
+    private async void LoadDefaults()
+    {
+        await GetTrainingPrograms();
+        await GetInstructors();
+        StateHasChanged();
+    }
+
+    private async Task GetInstructors() => Instructors = await instructorService.GetAll(Constants.InstructorBaseUrl);
+
+    private async Task GetTrainingPrograms() => TrainingPrograms = await trainingProgramService.GetAll(Constants.TrainingProgramBaseUrl);
+
+    void AddButtonClicked()
+    {
+        trainingProgramDialog?.ChangeTitle("Add");
+        TrainingProgram = new();
+        OpenDialog();        
+    }
+
+    void OpenDialog() => trainingProgramDialog?.OpenDialog();
+
+    //Add or Update
+    private async Task HandleSaveOperationEvent(TrainingProgram trainingProgram)
+    {
+        bool successCheck = false;
+        if (trainingProgram.Id > 0)
+        {
+            var result = await trainingProgramService.Update(TrainingProgram, Constants.TrainingProgramBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        else
+        {
+            var result = await trainingProgramService.Insert(TrainingProgram, Constants.TrainingProgramBaseUrl);
+            successCheck = await DisplayMessage(result.Flag, result.Message);
+        }
+        if (successCheck)
+        {
+            TrainingProgram = new();
+            await GetTrainingPrograms();
+            trainingProgramDialog?.ChangeTitle("Add");
+        }
+    }
+
+    // Edit
+    private void EditClicked(TrainingProgram trainingProgram)
+    {
+        trainingProgramDialog?.ChangeTitle("Update");
+        TrainingProgram = trainingProgram;
+        OpenDialog();
+    }
+
+    //Delete
+    private async Task DeleteClicked(TrainingProgram trainingProgram)
+    {
+        bool confrim = await dialogService.ConfirmAsync($"Are you sure you wanna delete {trainingProgram.Name}?", "Confrim Delete");
+        if (!confrim) return;
+
+        var response = await trainingProgramService.DeleteById(trainingProgram.Id, Constants.TrainingProgramBaseUrl);
+        var result = await DisplayMessage(response.Flag, response.Message);
+        if (result) await GetTrainingPrograms();
+    }
+
+    // Show
+    private void ShowClicked(TrainingProgram item)
+    {
+        TrainingProgram = item;
+        trainingProgramDialog?.ChangeTitle("View");
+        OpenDialog();
+    }
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+
+    public void Dispose() => allState.Action -= StateHasChanged;
+}

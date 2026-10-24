@@ -1,0 +1,173 @@
+﻿<SfDialog Width="750px" IsModal="true" ShowCloseIcon="true" @bind-Visible="IsVisible">
+    <DialogEvents OnOpen="OpenDialog"> </DialogEvents>
+    <DialogTemplates>
+        <Header> Employee Bonuses </Header>
+        <Content>
+            <EditForm Model="EmployeeDetails" Enhance>
+                <div class="card border-success">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Id</label>
+                            <input @bind="EmployeeDetails.Id" class="form-control" disabled />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Name</label>
+                            <input @bind="EmployeeDetails.Name" class="form-control" disabled />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">List Bonus</label>
+                            <div class="table-wrapper">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">Name</th>
+                                            <th scope="col">Bonus Amount</th>
+                                            <th scope="col">Bonus Date</th>
+                                            <th scope="col">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{
+                                            int count = 1;
+                                            foreach (var item in SelectedBonuses)
+                                            {
+                                                <tr>
+                                                    <th scope="row">@count</th>
+                                                    <td>@item.Name</td>
+                                                    <td>@item.BonusAmount.ToString("N0") VND</td>
+                                                    <td>@item.BonusDate.ToString("MM/dd/yyyy")</td>
+                                                    <td>
+                                                        @{
+                                                            if (item.BonusDate > DateTime.Now)
+                                                            {
+                                                                <i class="bi bi-pencil text-info" id="cursorStyle" @onclick="() => EditClicked(item)"></i>
+                                                                <span> </span>
+                                                                <i class="bi bi-trash text-danger" id="cursorStyle" @onclick="() => DeleteClicked(item)"></i>
+                                                            }else{
+                                                                <i class="bi bi-eye text-info" id="cursorStyle" @onclick="() => ShowClicked(item)"></i>
+                                                            }
+                                                        }
+                                                    </td>                                                        
+                                                </tr>
+                                                count++;                                                                                               
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+        </Content>
+    </DialogTemplates>
+    <DialogButtons>
+        <DialogButton Content="Close" IsPrimary="true" OnClick="CloseDialog" />
+    </DialogButtons>
+</SfDialog>
+
+<BonusDialog @ref="bonusDialog"
+             Employee="EmployeeDetails"
+             Bonus="Bonus"
+             HandleSaveOperationEvent="UpdateBonusEvent">
+</BonusDialog>
+
+<style>
+    .table-wrapper {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .table thead {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        z-index: 1;
+    }
+
+    .table thead th {
+        background-color: white;
+    }
+</style>
+
+@code {
+    [Parameter] public Employee EmployeeDetails { get; set; } = new();
+
+    private bool IsVisible { get; set; } = false;
+
+    public List< Bonus> SelectedBonuses { get; set; } = new();
+
+    private async Task GetBonuses() => SelectedBonuses = await bonusService.GetAllByEmployeeId(EmployeeDetails.Id, Constants.BonusBaseUrl);
+
+    // Update Bonus clicked
+    BonusDialog? bonusDialog;
+    Bonus Bonus = new();
+    private void EditClicked(Bonus item)
+    {
+        bonusDialog.ChangeTitle("Update");
+        Bonus = item;
+        bonusDialog!.OpenDialog();
+    }
+
+    // Update Bonus Handler
+    async Task UpdateBonusEvent(Bonus item)
+    {
+        var (flag, message) = await bonusService.Update(item, Constants.BonusBaseUrl);
+        var response = await DisplayMessage(flag, message);
+        if (response)
+        {
+            bonusDialog!.CloseDialog();
+            bonusDialog.ChangeTitle("Add");
+            await GetBonuses();
+            StateHasChanged();
+        }
+    }
+
+    // Show
+    private void ShowClicked(Bonus item)
+    {
+        Bonus = item;
+        bonusDialog?.ChangeTitle("View");
+        bonusDialog!.OpenDialog();
+    }
+
+    //Delete
+    private async Task DeleteClicked(Bonus item)
+    {
+        bool confrim = await dialogService.ConfirmAsync($"Are you sure you wanna delete {item.Name}?", "Confrim Delete");
+        if (!confrim) return;
+
+        var response = await bonusService.DeleteById(item.Id, Constants.BonusBaseUrl);
+        var result = await DisplayMessage(response.Flag, response.Message);
+        if (result)
+        {
+            await GetBonuses();
+            StateHasChanged();
+        }
+    }
+
+    public async void OpenDialog()
+    {
+        SelectedBonuses = new();
+        IsVisible = true;
+        await GetBonuses();
+        StateHasChanged();
+    }
+
+    public void CloseDialog() => IsVisible = false;
+
+    private async Task<bool> DisplayMessage(bool flag, string message)
+    {
+        if (flag)
+        {
+            await dialogService.AlertAsync(message, "Success Operation");
+            return true;
+        }
+        else
+        {
+            await dialogService.AlertAsync(message, "Alert!");
+            return false;
+        }
+    }
+}
